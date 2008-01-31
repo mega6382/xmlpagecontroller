@@ -519,7 +519,23 @@ require_once 'xmlparser.php';
 				if( !isset( $_loc->tagAttrs['lang'] ) || $_loc->tagAttrs['lang'] != $this->lang ) continue;
 				foreach( $_loc->tagChildren as $_item ){
 					if( !isset( $_item->tagAttrs['name'] ) || $_item->tagName != 'item' ) continue;
-					$this->locale[ $_item->tagAttrs['name'] ] = $_item->tagData;
+					$this->log( 'Locale: "' . $_item->tagAttrs['name'] . '"', 2 );
+					$type = isset( $_item->tagAttrs['type'] ) ? $_item->tagAttrs['type'] : 'inline';
+					switch( $type )
+					{
+						default:
+						case 'inline':
+							$this->locale[ $_item->tagAttrs['name'] ] = $_item->tagData;
+						break;
+						
+						case 'file':
+							if( is_file( $_template->tagData ) )
+							{
+								$this->locale[ $_item->tagAttrs['name'] ] = _gett( $_item->tagData );
+							}
+						break;
+					}
+					$this->log(' lenght: ' . strlen( $_template->tagAttrs['name'] ), 2 );
 				}
 			}
 			$this->log( '/*========= End parse XML: "'. $filename.'"========*/', 0 );

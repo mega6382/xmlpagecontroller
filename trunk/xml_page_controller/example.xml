@@ -3,12 +3,13 @@
 	<options>
 		<!-- define options -->
 		<option name="default_locale">en</option>
-		<option name="image_dir">img/</option>
+		<option name="image_dir"></option>
 		<option name="script_dir"></option>
 		<option name="style_dir"></option>
 		<option name="layout_dir"></option>
 		<option name="module_dir"></option>
 		<option name="template_dir"></option>
+		<!-- define end -->
 	</options>
 	<container type="inline">
 	<![CDATA[
@@ -20,204 +21,92 @@
 				<meta name="description"		content="[PAGE_HEADER_DESCRIPTION]" />
 				<meta name="revised"			content="[PAGE_HEADER_AUTHOR], [PAGE_HEADER_REVISION]" />
 				<meta name="author"				content="[PAGE_HEADER_AUTHOR]" />
-				<meta name="verify-v1" content="UY5xl55nYshJLSORziFDIiJDk74XLPib+Rp7+0ezEWo=" />
 				<title>[PAGE_HEADER_TITLE]</title>
 				[PAGE:INCLUDE_STYLE]
-				[PAGE:INLINE_STYLE]
 			</head>
-			<body>[CONTENT][PAGE:INCLUDE_SCRIPT][PAGE:INLINE_SCRIPT]</body>
+			<body>[PAGE:INLINE_STYLE][CONTENT][PAGE:INCLUDE_SCRIPT][PAGE:INLINE_SCRIPT]</body>
 		</html>
 	]]>
 	</container>
 	
 	<templates>
-		<template name="mainTemplate" type="file">templates/template.htm</template>
+		<template name="test1" type="inline"><![CDATA[<h2>[TEXT]</h2><br />]]></template>
+		<template name="test2" type="inline"><![CDATA[<h3>[TEXT]</h3><br />]]></template>
+		<template name="link" type="inline"><![CDATA[<a href="[URL]">[TEXT]</a><br />]]></template>
 	</templates>
+	
 	<pages>
-		<value name="page_header_title">DECORHOME.RU </value>
-		<value name="page_header_encoding">windows-1251</value>
-		<value name="page_header_keywords"><![CDATA[Decor, Fabric, Brand, Photos]]></value>
-		<value name="page_header_description"><![CDATA[DECORHOME.RU]]></value>
-		<value name="page_header_author"><![CDATA[Andrew Saponenko]]></value>
-		<value name="page_header_revision"><![CDATA[13.12.2007]]></value>
+		<!-- INCLUDE JAVASCRIPT FILE -->
+		<script type="file">script.js</script>
 		
-		<!-- NO PAGE SET BEGIN -->
-		<if noset="page">
-			<script type="file">jquery.js</script>
-			<script type="file">logon.js</script>
-			<style type="inline">
-				<![CDATA[
-					body{
-						background-color: #333333;
-						color: #cccccc;
-						margin: 0px;
-						padding: 0px;
-						
-						font-family:Arial, Helvetica, sans-serif;
-						font-size: 13px;
-						background-image: url([IMG]bg_logo4.jpg);
-						background-position:0% 0%;
-						background-repeat: repeat-x;
-					}
-					#logocontainer{
-						text-align:center;
-					}
-					a:link,a:hover,a:visited{
-						border:none;
-					}
-					a img{
-						border:none;
-					}
-				]]>
-			</style>
-			<value name="content" type="file">template_login.htm</value>
-		</if>
-		<!-- NO PAGE SET END -->
-
+		<!-- INJECT INLINE JAVASCRIPT -->
+		<script type="inline">
+		<![CDATA[
+			var a = 10;
+			var b = 5;
+			var c = a + b;
+		]]>
+		</script>
 		
-		<!-- PAGE SET BEGIN -->
-		<if isset="page">
-			<style type="file">style.css</style>
-			<script type="file">jquery.js</script>
-			<script type="file">jquery.dimensions.js</script>
-			<script type="file">floatPic.js</script>
-			<script type="file">script.js</script>
-			<value name="page_header_title" type="template">titles.xml</value>
-			<value name="content" template="mainTemplate">
-				<value name="frame:mainmenu" type="file">mainmenu.htm</value>
-				<value name="frame:foot_panel"><![CDATA[ &copy; DECORHOME 2007]]></value>
-				<value name="frame:footer" type="file">footer.htm</value>
-				<!-- NEW -->
-				<if param="page == news">
-					<style type="inline">
-						<![CDATA[
-							.newsDate{
-								font-family: Verdana,Arial,Helvetica,sans-serif;
-								font-size: 1.1em;
-								font-weight: normal;
-								color: #bbbbbb;
-							}
-							.newsCaption{
-								font-family: Verdana,Arial,Helvetica,sans-serif;
-								font-size: 1.2em;
-								font-weight: bold;
-								font-style: italic;
-								color: #dddddd;
-							}
-							.newsText{
-								font-family: Verdana,Arial,Helvetica,sans-serif;
-								font-size: 1,0em;
-								font-weight: normal;
-								color: #cccccc;
-							}
-						]]>
-					</style>
-					<value name="page_content" type="script">news.php</value>
-				</if>
-			
-				<!-- MAP -->
-				<if param="page == map">
-					<value name="page_content" type="file">map.htm</value>
-				</if>
-				<!-- PUB -->
-				<if param="page == pub">
-					<if isset="id">
-						<if param="id == 1">
-							<value name="page_content" type="file">pub_1.htm</value>
-						</if>
-						<if param="id == 2">
-							<value name="page_content" type="file">pub_2.htm</value>
-						</if>
-						<if param="id == 3">
-							<value name="page_content" type="file">pub_3.htm</value>
-						</if>
-					</if>
-				</if>
+		<!-- INCLUDE CSS FILE -->
+		<style type="file">style.css</style>
+		
+		<!-- INJECT INLINE CSS -->
+		<style type="inline">
+		<![CDATA[
+			body{
+				background-color: #333333;
+				color: #cccccc;
+				margin: 0px;
+				padding: 0px;
 				
-				<!-- FAB -->
-				<if param="page == fab">
-					<value name="page_content" type="script">fab.php</value>
-				</if>
-				
-				<!-- EXC -->
-				<if param="page == exc">
-					<value name="page_content" type="template">exc.xml</value>
-				</if>
-				
-				<!-- TEST -->
-				<if param="page == test">
-					<value name="page_content">
-					<![CDATA[
-						<div style="background:#000000; width:500px; height:500px; text-align:center; vertical-align:middle;"><img src="[IMG]test/1.jpg" /></div>
-					]]>
-					</value>
-				</if>
-				<value name="frame:left_panel" type="template">left_panel.xml</value>
-				<value name="frame:right_panel" type="template">right_panel.xml</value>
-			</value>
-		</if>
+				font-family:Arial, Helvetica, sans-serif;
+				font-size: 13px;
+			}
+		]]>
+		</style>
+		
+		<!-- FILL TEMPLATE VALUES -->
+		<out name="page_header_title">Example page</out>
+		<out name="page_header_encoding">utf-8</out>
+		<out name="page_header_keywords">Keywords,keywords,keywords,keywords</out>
+		<out name="page_header_description">Site description</out>
+		<out name="page_header_author">Author name</out>
+		<out name="page_header_revision">01.01.2008</out>
+		
+		<!-- SIMPLE INLINE OUT -->
+		<out name="content" type="inline"><![CDATA[<h1>Example page</h1>]]></out>	
+		
+		<!-- OUT BY TEMPLATE -->
+		<out name="content" template="test1">
+			<out name="text" type="inline">Template test 1</out>
+		</out>
+		
+		<!-- OUT BY TEMPLATE -->
+		<out name="content" template="test2">
+			<out name="text" type="inline">Template test 2</out>
+		</out>
+		
+		<!-- OUT BY TEMPLATE -->
+		<out name="content" template="link">
+			<out name="text" type="inline">RUS link</out>
+			<out name="url" type="inline"><![CDATA[?lang=ru]]></out>
+		</out>
+		
+		<!-- OUT BY TEMPLATE -->
+		<out name="content" template="link">
+			<out name="text" type="inline">ENG link</out>
+			<out name="url" type="inline"><![CDATA[?lang=en]]></out>
+		</out>
+		
+		<!-- MULTILANGUE OUT -->
+		<out name="content" type="inline">[MULTILANGUE_OUT]</out>
 	</pages>
 	
 	<locale lang="ru">
-		<item name="thelang">en</item>
-		<!-- /MAIN MENU/ -->
-		<item name="menu:main">О Компании</item>
-		<item name="menu:main:news">Новости</item>
-		<item name="menu:main:exc">Выставки</item>
-		<item name="menu:main:map">Схема проезда</item>
-		<!-- // -->
-		<item name="menu:fab">Фабрики</item>
-		<item name="menu:fab:modern">Современные ткани</item>
-		<item name="menu:fab:classic">Классические</item>
-		<item name="menu:fab:wall">Обои</item>
-		<item name="menu:fab:access">Аксессуары</item>
-		<item name="menu:fab:light">Освещение</item>
-		<!-- // -->
-		<item name="menu:pub">Публикации</item>
-		<item name="menu:pub:1">Удобная классика</item>
-		<item name="menu:pub:2">Цветы вероны</item>
-		<item name="menu:pub:3">В пастельных тонах</item>
-		<!-- /// --> 
-		<item name="menu:other">Прочее</item>
-		<item name="menu:other:faq">F.A.Q</item>
-		<item name="menu:other:fa">Часто задаваемые вопросы</item>
-		<item name="menu:other:links">Ссылки</item>
-		<!-- /// -->
-		<item name="caption:other_pub">Другие публикации</item>
-		<item name="caption:other_fab">Другие фабрики</item>
-		<item name="caption:contacts">Контакты</item>
-		<item name="caption:news">Новости</item>
-		<item name="caption:map_sheme">Схема проезда</item>
-		<item name="caption:collections">коллекция</item>		
+		<item name="multilangue_out">Р СѓСЃСЃРєРёР№ С‚РµРєСЃС‚</item>
 	</locale>
 	<locale lang="en">
-		<item name="thelang">ru</item>
-		<!-- /MAIN MENU/ -->
-		<item name="menu:main">About company</item>
-		<item name="menu:main:news">News</item>
-		<item name="menu:main:exc">Exchebitions</item>
-		<item name="menu:main:map">Map</item>
-		<!-- // -->
-		<item name="menu:fab">Fabric</item>
-		<item name="menu:fab:modern">Modern fabric</item>
-		<item name="menu:fab:classic">Classical fabric</item>
-		<item name="menu:fab:wall">Wallpapers</item>
-		<item name="menu:fab:access">Accessories</item>
-		<item name="menu:fab:light">Coverage</item>
-		<!-- // -->
-		<item name="menu:pub">Publications</item>
-		<item name="menu:pub:1">Easy classics</item>
-		<item name="menu:pub:2">Flowers Verona</item>
-		<item name="menu:pub:3">In pastel tones</item>
-		<!-- /// --> 
-		<item name="menu:other">Other</item>
-		<item name="menu:other:links">Links</item>
-		
-		<item name="caption:other_pub">Other publication</item>
-		<item name="caption:other_fab">Other fabric</item>
-		<item name="caption:contacts">Contacts</item>
-		<item name="caption:news">News</item>
-		<item name="caption:map_sheme">Scheme</item>
-		<item name="caption:collections">collections</item>		
+		<item name="multilangue_out">English text</item>
 	</locale>
 </root>
