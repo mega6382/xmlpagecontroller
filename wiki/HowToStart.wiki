@@ -45,4 +45,6 @@ At the end programming, because the more you want to set XML document in our cas
 }}}
 
 As result of execution you can see on browser "Hello world!!!"
-Example download [http://xmlpagecontroller.googlecode.com/files/xpc_example.zip]
+
+===Download example===
+[http://xmlpagecontroller.googlecode.com/files/xpc_example.zip]
