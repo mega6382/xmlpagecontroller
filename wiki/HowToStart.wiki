@@ -6,7 +6,7 @@ Before we start. The author believes that you have configured web server to work
 
 As is well known that "XML page controller" further XPC, written in PHP. First, it is essential to create an index file which should include the necessary library which will start the entire procedure.
 
-===Example file "index.php".===
+====Example file "index.php".====
 {{{
 <?php
 	include "xmlpagecontroller.php"; // Include "XPC" library
@@ -22,7 +22,7 @@ As is well known that "XML page controller" further XPC, written in PHP. First, 
 	
 At the end programming, because the more you want to set XML document in our case example.xml
 
-===Example file "example.xml".===
+====Example file "example.xml".====
 {{{
 <?xml version="1.0" encoding="utf-8"?>
 <root>
@@ -43,3 +43,5 @@ At the end programming, because the more you want to set XML document in our cas
 	</pages>
 </root>
 }}}
+
+Example download [http://xmlpagecontroller.googlecode.com/files/xpc_example.zip]
