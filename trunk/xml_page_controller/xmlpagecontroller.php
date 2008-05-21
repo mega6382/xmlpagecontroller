@@ -1,31 +1,20 @@
 <?php
+	/*
+	* Include XML parser class
+	*/
 	require_once 'xmlparser.php';
-	function _gett($filename)
-	{
-		if( !$filename || !is_file($filename) ) return 0;
-		return file_get_contents($filename);
-	}
 
-	function _sett( $template, $array, $start = '[', $end = ']' ){
-		if( !is_array( $array ) ) return $template;
-		$text = $template;
-		foreach($array as $key => $value){
-			$key	= $start . strtoupper( $key ) . $end;
-			$value	= ( strlen($value) )? $value : ''; 
-			$text	= str_replace($key, stripslashes($value), $text);
-		}
-		return $text;
-	}
-	class xmlpage {
-	
-		var $options = array(
-			'html_dir' => 'html/',
-			'js_dir' => 'js/',
-			'php_dir' => 'php/',
-			'css_dir' => 'css/',
-			'xml_dir' => 'xml/',
-			'img_dir' => 'xml/'
+	/*
+	* XML page controller - class
+	*/
+	class xmlpage
+	{
+		var $options = array();
+		var $searchDir = array(
+			''
 		);
+		
+		var $defaultTempateTags = array('[',']');
 		var $templates = array();
 		
 		var $inline_script = array();
@@ -39,11 +28,7 @@
 		var $debug = false;
 		var $container = '[CONTENT]';
 		var $outdata = array();
-		var $output;
-		var $xml;
-		var $logstack;
-		var $node;
-		var $nowloc;
+		var $output, $xml, $logstack, $node, $nowloc;
 			
 		function log( $message, $stack = 0 )
 		{
@@ -55,11 +40,10 @@
 		
 		function findindir($file)
 		{
-			$dirs = $this->options;
-			$dirs['empty'] = '';
-			foreach( $this->options as $v )
+			$dirs = $this->searchDir;
+			foreach( $this->searchDir as $v )
 			{
-				if( is_file( $v.$file ) ) return $v.$file;
+				if( file_exists( $v.$file ) ) return $v.$file;
 			}
 			return 0;
 		}
@@ -81,22 +65,26 @@
 				case 'template':
 				case 'layout':
 				case 'xml':
-				//	$ret = 'TEMPLATE FILE';
+				{
 					$t = $this->findindir($node->tagData);
 					if( $t )
 					{
-						$xml_				= new xmlpage($t, $this->lang, $this->debug);
-						$xml_->options		= &$this->options;
-						$xml_->templates	= &$this->templates;
-						$xml_->logstack		= $this->logstack + 1;
+						$xml_					= new xmlpage($t, $this->lang, $this->debug, $this->defaultTempateTags);
+						
+						$xml_->options			= &$this->options;
+						$xml_->searchDir		= &$this->searchDir;
+						$xml_->templates		= &$this->templates;
+						$xml_->logstack			= $this->logstack + 1;
 						$ret = $xml_->out();
 						
-						$this->_log = array_merge(&$this->_log, &$xml_->_log);
-						$this->include_script = array_merge(&$this->include_script, &$xml_->include_script);
-						$this->include_style = array_merge(&$this->include_style, &$xml_->include_style);
-						$this->inline_script = array_merge(&$this->inline_script, &$xml_->inline_script);
-						$this->inline_style = array_merge(&$this->inline_style, &$xml_->inline_style);
+						$this->_log				= array_merge(&$this->_log, &$xml_->_log);
+						
+						$this->include_script	= array_merge(&$this->include_script,	&$xml_->include_script	);
+						$this->include_style	= array_merge(&$this->include_style,	&$xml_->include_style	);
+						$this->inline_script	= array_merge(&$this->inline_script,	&$xml_->inline_script	);
+						$this->inline_style		= array_merge(&$this->inline_style,		&$xml_->inline_style	);
 					}
+				}
 				break;
 				
 				case 'file':
@@ -117,24 +105,24 @@
 				break;
 			}
 			
-			if( isset( $attrs['template'] ) )
+			if( isset( $attrs['template'] ) && isset( $this->templates[ $attrs['template'] ] ) )
 			{
-				$t = $this->templates[ $attrs['template'] ];
-				if( $t )
-				{
-					$xml_				= new xmlpage('___none___', $this->lang, $this->debug);
-					$xml_->container	= $this->templates[ $attrs['template'] ];
-					$xml_->xml			= &$node;
-					$xml_->options		= &$this->options;
-					$xml_->templates	= &$this->templates;
-					$xml_->logstack		= $this->logstack + 1;
-					$ret = $xml_->out();
-					$this->_log = array_merge(&$this->_log, &$xml_->_log);
-					$this->include_script = array_merge(&$this->include_script, &$xml_->include_script);
-					$this->include_style = array_merge(&$this->include_style, &$xml_->include_style);
-					$this->inline_script = array_merge(&$this->inline_script, &$xml_->inline_script);
-					$this->inline_style = array_merge(&$this->inline_style, &$xml_->inline_style);
-				}
+				$xml_				= new xmlpage('___none___', $this->lang, $this->debug, $this->defaultTempateTags);
+				$xml_->container	= $this->templates[ $attrs['template'] ];
+				$xml_->xml			= &$node;
+				$xml_->options		= &$this->options;
+				$xml_->searchDir	= &$this->searchDir;
+				$xml_->templates	= &$this->templates;
+				$xml_->logstack		= $this->logstack + 1;
+				
+				$ret = $xml_->out();
+				
+				$this->_log = array_merge(&$this->_log, &$xml_->_log);
+				
+				$this->include_script	= array_merge(&$this->include_script,	&$xml_->include_script	);
+				$this->include_style	= array_merge(&$this->include_style,	&$xml_->include_style	);
+				$this->inline_script	= array_merge(&$this->inline_script,	&$xml_->inline_script	);
+				$this->inline_style		= array_merge(&$this->inline_style,		&$xml_->inline_style	);
 			}
 			return $ret;
 		}
@@ -147,7 +135,7 @@
 			$this->logstack -= 2;
 		}
 		
-		function condition( $node, $arr)
+		function condition( $node, $arg )
 		{
 			if( !$node ) return 0;
 			//if( !$arr ) return 0;
@@ -156,20 +144,20 @@
 			if( isset( $node->tagAttrs['isset'] ) )
 			{
 				$l = 'isset( "'.$node->tagAttrs['isset'].'")';
-				$ret = isset( $arr[ $node->tagAttrs['isset'] ] );
+				$ret = isset( $arg[ $node->tagAttrs['isset'] ] );
 			}
 			
 			if( isset( $node->tagAttrs['noset'] ) )
 			{
 				$l = 'noset( "'.$node->tagAttrs['noset'].'")';
-				$ret = !isset( $arr[ $node->tagAttrs['noset'] ] );
+				$ret = !isset( $arg[ $node->tagAttrs['noset'] ] );
 			}
 			
 			if( isset( $node->tagAttrs['param'] ) )
 			{
 				//print_r($ret);
 				list($var, $con, $val) = split(' ', $node->tagAttrs['param'] );
-				$var = $arr[$var];
+				$var = $arg[$var];
 				$l = 'Eval ' . '("'.$var.'" ' . $con . ' "' . $val . '");';
 				$ret = eval('return ("'.$var.'" ' . $con . ' "' . $val . '");');
 			}
@@ -203,8 +191,25 @@
 				break;
 				
 				case 'option':
-					$this->options[ $attr['name'] ] = $data;
-					$this->log('Option "'.$attr['name'].'": '.$data);
+				{
+					if( !isset( $attr['name'] ) )
+					{
+						$this->log('<b>Invalid option name with value:</b> '.$data );
+						break;
+					}
+					switch( $attr['name'] )
+					{
+						default:
+							$this->options[ $attr['name'] ] = $data;
+							$this->log('Option "'.$attr['name'].'": '.$data);
+						break;
+						
+						case 'searchDir':
+							array_push( $this->searchDir, $data );
+							$this->log('Add search dir: '.$data);
+						break;
+					}
+				}
 				break;
 				
 				case 'template':
@@ -272,7 +277,7 @@
 					{
 						$this->outdata[ strtolower( $attr['name'] ) ] = $res;
 					}
-					$this->log('Value "'.$attr['name'].'" len: '.strlen($res));
+					$this->log( 'Value "'. $attr['name']/* .'" len: '.strlen($res)*/ );
 				break;
 				
 				case 'if':
@@ -316,7 +321,7 @@
 		/*
 		* CONSTRUCTOR
 		*/
-		function xmlpage($filename, $language, $debugmode)
+		function xmlpage($filename, $language = "en", $debugmode = false, $templateTag = array('[',']') )
 		{
 			if( $filename && is_file($filename) )
 			{
@@ -327,6 +332,7 @@
 			
 			$this->lang		= $language;
 			$this->debug	= $debugmode;
+			$this->defaultTempateTags = $templateTag;
 		}
 		
 		function out()
@@ -335,17 +341,17 @@
 			///print_r($xmldoc);
 			$this->parseRecursive( $this->xml );
 			$output = $this->container;
-			$output = _sett($output,$this->outdata);
+			$output = $this->apply($output,$this->outdata);
 
 			$includescript = '';
 			foreach( $this->include_script as $script )
 			{
-				$includescript .= _sett('<script type="text/javascript" src="[SCRIPT]"></script>', array( 'script' => $script ) );
+				$includescript .= $this->apply('<script type="text/javascript" src="[SCRIPT]"></script>', array( 'script' => $script ) );
 			}
 			$includestyle = '';
 			foreach( $this->include_style as $style )
 			{
-				$includestyle .= _sett('<link rel="stylesheet" type="text/css" href="[STYLE]" />', array( 'style' => $style ) );
+				$includestyle .= $this->apply('<link rel="stylesheet" type="text/css" href="[STYLE]" />', array( 'style' => $style ) );
 			}
 			
 			$inlinescript = '';
@@ -362,17 +368,31 @@
 				foreach( $this->inline_style as $script )	$inlinestyle .= "\n" . $script;
 				$inlinestyle .= "</style>";
 			}
-			$output = _sett( $output, array(
+			$output = $this->apply( $output, array(
 				'page:include_script'	=> $includescript,
 				'page:include_style'	=> $includestyle,
 				'page:inline_style'		=> $inlinestyle,
 				'page:inline_script'	=> $inlinescript
 			));
 			
-			$output = _sett($output,array('lang'=>$this->lang,'img'=>$this->options['image_dir']));
+			$output = $this->apply($output,array('lang'=>$this->lang,'img'=>$this->options['image_dir']));
 			$locale = isset( $this->locale[ $this->lang ] ) ? $this->locale[ $this->lang ] : 0;
-			if($locale) $output = _sett($output,$locale);
+			if($locale) $output = $this->apply($output,$locale);
 			
+			return $output;
+		}
+
+		function apply( $temp, $data )
+		{
+			if( !is_array( $data ) ) return $temp;
+			$start	= isset( $this->options['templateTagBegin'] )	? $this->options['templateTagBegin']	: $this->defaultTempateTags[0];
+			$end	= isset( $this->options['templateTagEnd'] )		? $this->options['templateTagEnd']		: $this->defaultTempateTags[1];
+
+			$output = $temp;
+			foreach($data as $key => $value){
+				$key		= $start . strtoupper( $key ) . $end; 
+				$output		= str_replace($key, stripslashes($value), $output);
+			}
 			return $output;
 		}
 		
