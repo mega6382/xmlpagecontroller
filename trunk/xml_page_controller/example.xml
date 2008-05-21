@@ -1,7 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <root>
-<<<<<<< .mine
-=======
 	<options>
 		<!-- define options -->
 		<option name="default_locale">en</option>
@@ -13,15 +11,12 @@
 		<option name="template_dir"></option>
 		<!-- define end -->
 	</options>
->>>>>>> .r14
 	<container type="inline">
 	<![CDATA[
 		<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 		<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="[LANG]" lang="[LANG]">
 			<head>
-<<<<<<< .mine
 				<title>[HEADER_TITLE]</title>
-=======
 				<meta http-equiv="Content-Type"	content="text/html; charset=[PAGE_HEADER_ENCODING]" />
 				<meta name="keywords"			content="[PAGE_HEADER_KEYWORDS]" />
 				<meta name="description"		content="[PAGE_HEADER_DESCRIPTION]" />
@@ -29,31 +24,20 @@
 				<meta name="author"				content="[PAGE_HEADER_AUTHOR]" />
 				<title>[PAGE_HEADER_TITLE]</title>
 				[PAGE:INCLUDE_STYLE]
->>>>>>> .r14
 			</head>
-<<<<<<< .mine
 			<body>[CONTENT]</body>
-=======
 			<body>[PAGE:INLINE_STYLE][CONTENT][PAGE:INCLUDE_SCRIPT][PAGE:INLINE_SCRIPT]</body>
->>>>>>> .r14
 		</html>
 	]]>
 	</container>
-<<<<<<< .mine
-=======
-	
 	<templates>
 		<template name="test1" type="inline"><![CDATA[<h2>[TEXT]</h2><br />]]></template>
 		<template name="test2" type="inline"><![CDATA[<h3>[TEXT]</h3><br />]]></template>
 		<template name="link" type="inline"><![CDATA[<a href="[URL]">[TEXT]</a><br />]]></template>
 	</templates>
->>>>>>> .r14
-	
 	<pages>
-<<<<<<< .mine
 		<out name="header_title">Hello World title</out>
 		<out name="content">Hello World!!!</out>
-=======
 		<!-- INCLUDE JAVASCRIPT FILE -->
 		<script type="file">script.js</script>
 		
@@ -119,16 +103,11 @@
 		
 		<!-- MULTILANGUE OUT -->
 		<out name="content" type="inline">[MULTILANGUE_OUT]</out>
->>>>>>> .r14
 	</pages>
-<<<<<<< .mine
-=======
-	
 	<locale lang="ru">
 		<item name="multilangue_out">Русский текст</item>
 	</locale>
 	<locale lang="en">
 		<item name="multilangue_out">English text</item>
 	</locale>
->>>>>>> .r14
 </root>
