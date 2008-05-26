@@ -125,7 +125,7 @@
 			$dirs = $this->searchDir;
 			foreach( $this->searchDir as $v )
 			{
-				if( file_exists( $v.$filename ) ) return $v.$filename;
+				if( is_file( $v.$filename ) ) return $v.$filename;
 			}
 			return 0;
 		}
@@ -143,6 +143,12 @@
 			$attrs = &$node->tagAttrs;
 			$type_attr = isset( $attrs['type'] ) ? $attrs['type'] : 'inline';
 			$ret = "";
+			
+			if( isset( $attrs['lang'] ) )
+			{
+				if( $attrs['lang'] != $this->lang ) return '';
+			}
+			
 			switch( $type_attr )
 			{
 				default:
@@ -297,6 +303,7 @@
 			$name = $node->tagName;
 			$attr = &$node->tagAttrs;
 			$data = &$node->tagData;
+			
 			switch( $name )
 			{
 				default:
