@@ -9,29 +9,101 @@
 	*/
 	class xmlpage
 	{
+		/*
+		* XML defined options
+		*/
 		var $options = array();
+		
+		/*
+		* File search directories from XML defined options
+		*/
 		var $searchDir = array(
-			''
+			'' // Current dir
 		);
 		
+		/*
+		* Default template tags, begin and end 
+		*/
 		var $defaultTempateTags = array('[',']');
+		
+		/*
+		* Contain temtlated HTML or etc from XML defines
+		*/
 		var $templates = array();
 		
+		/*
+		* Strings from Inline defined scripts
+		*/
 		var $inline_script = array();
+		
+		/*
+		* Include script file names
+		*/
 		var $include_script = array();
+		
+		/*
+		* Url address of remote script
+		*/
 		var $remote_script = array();
 		
+		/*
+		*  Strings from inline defined scripts 
+		*/
 		var $inline_style = array();
+		
+		/*
+		* Include script file names
+		*/
 		var $include_style = array();
+		
+		/*
+		* Url address of remote scripts
+		*/
 		var $remote_style = array();
+		
+		/*
+		* Debug information collection
+		*/
 		var $_log = array();
+		
+		/*
+		* Strings of localed words defined in XML
+		*/
 		var $locale = array();
+		
+		/*
+		* Defined language
+		*/
 		var $lang = 'en';
+		
+		/*
+		* Debug flag
+		*/
 		var $debug = false;
+		
+		/*
+		* Templated container
+		*/
 		var $container = '[CONTENT]';
+		
+		/*
+		* All output named values
+		*/
 		var $outdata = array();
+		
+		/*
+		* Other script variables
+		*/
 		var $output, $xml, $logstack, $node, $nowloc;
 			
+		/*
+		* function log (for inner usage) - Put message to log stack
+		* args
+		* 	$message (string) - Message to output
+		*	$stack(number) - Count of whitespace before message line
+		* return
+		*	Number lines of log
+		*/
 		function log( $message, $stack = 0 )
 		{
 			if( !$this->debug ) return 0;
@@ -40,16 +112,31 @@
 			return count( $this->_log );
 		}
 		
-		function findindir($file)
+		/*
+		* function findindir (for inner usage) - Find file in directories
+		* args
+		*	$filename (string) - Name of file to find
+		* return 
+		*	0 - if file not found
+		*	Or file path as string 
+		*/
+		function findindir($filename)
 		{
 			$dirs = $this->searchDir;
 			foreach( $this->searchDir as $v )
 			{
-				if( file_exists( $v.$file ) ) return $v.$file;
+				if( file_exists( $v.$filename ) ) return $v.$filename;
 			}
 			return 0;
 		}
 		
+		/*
+		* function parseValue(for inner usage) - Get result of tag
+		* args
+		*	$node(XMLTag) - Node
+		* return
+		*	String 
+		*/
 		function parseValue($node)
 		{
 			$lang = $this->lang;
@@ -85,6 +172,8 @@
 						$this->include_style	= array_merge(&$this->include_style,	&$xml_->include_style	);
 						$this->inline_script	= array_merge(&$this->inline_script,	&$xml_->inline_script	);
 						$this->inline_style		= array_merge(&$this->inline_style,		&$xml_->inline_style	);
+					}else{
+						$this->log('<b>File not found</b>: '. $node->tagData);
 					}
 				}
 				break;
@@ -95,6 +184,8 @@
 					if( $ret ){
 						$this->log('Read file: '. $ret);
 						$ret = file_get_contents( $ret );
+					}else{
+						$this->log('<b>File not found</b>: '. $node->tagData);
 					}
 				break;
 				
@@ -103,6 +194,9 @@
 				case 'script':
 					$ret = $this->findindir($node->tagData);
 					if( $ret ) $ret = require( $ret );
+					else{
+						$this->log('<b>File not found</b>: '. $node->tagData);
+					}
 					
 				break;
 			}
@@ -129,14 +223,31 @@
 			return $ret;
 		}
 		
+		/*
+		* function parseRecursive (for inner usage) - Recursive iteration in tag nodes
+		* args
+		*	$node(XMLTag) - Node where start iteration
+		*/
 		function parseRecursive($node)
 		{
 			if( !$node ) return;
 			$this->logstack += 2;
-			foreach( $node->tagChildren as $child ) $this->parseNode( $child );
+			foreach( $node->tagChildren as $child )
+			{
+				$this->parseNode( $child );
+			}
 			$this->logstack -= 2;
 		}
 		
+		/*
+		* function contion (for inner usage) - Execute XML defined condition
+		* args
+		*	$node (XMLTag) - Node wher located condition
+		*	$node(array) - Variables to look
+		* return 
+		*	0 - if condition == false or his failed
+		*	1 - if condition == true
+		*/
 		function condition( $node, $arg )
 		{
 			if( !$node ) return 0;
@@ -157,7 +268,6 @@
 			
 			if( isset( $node->tagAttrs['param'] ) )
 			{
-				//print_r($ret);
 				list($var, $con, $val) = split(' ', $node->tagAttrs['param'] );
 				if( isset( $arg[$var] ) )
 				{
@@ -175,6 +285,11 @@
 			return $ret;
 		}
 		
+		/*
+		* function parseNode(for inner usage) - Parsing tag nodes
+		* args
+		*	$node(XMLTag) - Tag node to parse
+		*/
 		function parseNode($node)
 		{
 			if( !is_object($node) ) return;
@@ -337,7 +452,12 @@
 		}
 		
 		/*
-		* CONSTRUCTOR
+		* CLASS CONSTRUCTOR
+		* args
+		*	$filename(string)(optional) - XML configuration filename
+		*	$language(string)(default=en) - Language definion for reading right locales
+		*	$debugmode(bool)(default=false) - Enabling/Disabling loging of class work
+		*	$templateTag(array)(default=array('[',']')) - Begin and end template indeficators
 		*/
 		function xmlpage($filename, $language = "en", $debugmode = false, $templateTag = array('[',']') )
 		{
@@ -353,6 +473,11 @@
 			$this->defaultTempateTags = $templateTag;
 		}
 		
+		/*
+		* function out
+		* return
+		*	String combined data of script work
+		*/
 		function out()
 		{			
 			if( !$this->xml ) return 'Content not found.';
@@ -413,13 +538,20 @@
 			
 			return $output;
 		}
-
+		
+		/*
+		* function apply
+		* args
+		*	$temp(string) - String of template
+		*	$data(array) - Assocciated array with data for apply to template
+		* return
+		*	String - Applied data
+		*/
 		function apply( $temp, $data )
 		{
 			if( !is_array( $data ) ) return $temp;
 			$start	= isset( $this->options['templateTagBegin'] )	? $this->options['templateTagBegin']	: $this->defaultTempateTags[0];
 			$end	= isset( $this->options['templateTagEnd'] )		? $this->options['templateTagEnd']		: $this->defaultTempateTags[1];
-
 			$output = $temp;
 			foreach($data as $key => $value){
 				$key		= $start . strtoupper( $key ) . $end; 
@@ -428,12 +560,19 @@
 			return $output;
 		}
 		
-		function log_print()
+		/*
+		* function log_print
+		* args
+		*	$delineter(string) - This insert beetween items
+		* return
+		*	String - Output log
+		*/
+		function log_print( $delimeter = '<br />')
 		{
-			$output = '<br />';
+			$output = $delimeter;
 			foreach( $this->_log as $val )
 			{
-				$output .= $val . '<br />';
+				$output .= $val . $delimeter;
 			}
 			return $output;
 		}
