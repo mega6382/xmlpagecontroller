@@ -19,9 +19,11 @@
 		
 		var $inline_script = array();
 		var $include_script = array();
+		var $remote_script = array();
 		
 		var $inline_style = array();
 		var $include_style = array();
+		var $remote_style = array();
 		var $_log = array();
 		var $locale = array();
 		var $lang = 'en';
@@ -157,9 +159,15 @@
 			{
 				//print_r($ret);
 				list($var, $con, $val) = split(' ', $node->tagAttrs['param'] );
-				$var = $arg[$var];
-				$l = 'Eval ' . '("'.$var.'" ' . $con . ' "' . $val . '");';
-				$ret = eval('return ("'.$var.'" ' . $con . ' "' . $val . '");');
+				if( isset( $arg[$var] ) )
+				{
+					$var = $arg[$var];
+					$l = 'Eval ' . '("'.$var.'" ' . $con . ' "' . $val . '");';
+					$ret = eval('return ("'.$var.'" ' . $con . ' "' . $val . '");');
+				}else
+				{
+					$ret = 0;
+				}
 			}
 			if( $ret ){
 				$this->log( 'Condition "'. $node->tagName .'" : '.$l );
@@ -240,6 +248,11 @@
 								$this->log('Include style: "'.$fil.'"');
 							}
 						break;
+						
+						case 'url':
+							array_push( $this->remote_style, $data );
+							$this->log('Url script: "'.$data.'"');
+						break;
 					}
 				break;
 				
@@ -261,6 +274,11 @@
 								array_push( $this->include_script, $fil );
 								$this->log('Include script: "'.$fil.'"');
 							}
+						break;
+						
+						case 'url':
+							array_push( $this->remote_script, $data );
+							$this->log('Url script: "'.$data.'"');
 						break;
 					}
 				break;
@@ -346,31 +364,45 @@
 			$includescript = '';
 			foreach( $this->include_script as $script )
 			{
-				$includescript .= $this->apply('<script type="text/javascript" src="[SCRIPT]"></script>', array( 'script' => $script ) );
+				$includescript .= $this->apply("\n<script type=\"text/javascript\" src=\"[SCRIPT]\"></script>", array( 'script' => $script ) );
 			}
+			
 			$includestyle = '';
 			foreach( $this->include_style as $style )
 			{
-				$includestyle .= $this->apply('<link rel="stylesheet" type="text/css" href="[STYLE]" />', array( 'style' => $style ) );
+				$includestyle .= $this->apply("\n<link rel=\"stylesheet\" type=\"text/css\" href=\"[STYLE]\" />", array( 'style' => $style ) );
 			}
 			
 			$inlinescript = '';
 			if( count( $this->inline_script ) > 0 )
 			{
-				$inlinescript = '<script type="text/javascript">';
-				foreach( $this->inline_script as $script )	$inlinescript .= "\n" . $script;
+				$inlinescript = "\n<script type=\"text/javascript\">\n";
+				foreach( $this->inline_script as $script )	$inlinescript .= $script . "\n";
 				$inlinescript .= "</script>";
 			}
 			
 			$inlinestyle = '';
 			if( count( $this->inline_style ) > 0 ){
-				$inlinestyle = '<style type="text/css">';
-				foreach( $this->inline_style as $script )	$inlinestyle .= "\n" . $script;
+				$inlinestyle = "\n<style type=\"text/css\">";
+				foreach( $this->inline_style as $script )	$inlinestyle .= $script . "\n";
 				$inlinestyle .= "</style>";
 			}
+			
+			$remotescript = '';
+			foreach( $this->remote_script as $script )
+			{
+				$remotescript .= $this->apply("\n<script type=\"text/javascript\" src=\"[SCRIPT]\"></script>", array( 'script' => $script ) );
+			}
+			
+			$remotestyle = '';
+			foreach( $this->remote_style as $style )
+			{
+				$remotestyle .= $this->apply("\n<link rel=\"stylesheet\" type=\"text/css\" href=\"[STYLE]\" />", array( 'style' => $style ) );
+			}
+			
 			$output = $this->apply( $output, array(
-				'page:include_script'	=> $includescript,
-				'page:include_style'	=> $includestyle,
+				'page:include_script'	=> $includescript.$remotescript,
+				'page:include_style'	=> $includestyle.$remotestyle,
 				'page:inline_style'		=> $inlinestyle,
 				'page:inline_script'	=> $inlinescript
 			));
