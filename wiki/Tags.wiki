@@ -1,4 +1,4 @@
-#Tags Markup, examples
+#summary Tags Markup, examples
 
 =Tags=
 Here I will tell tags used by XPC in the XML file.
