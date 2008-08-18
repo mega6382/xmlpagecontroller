@@ -22,6 +22,7 @@ As is well known that "XML page controller" further XPC, written in PHP. First, 
 	
 At the end programming, because the more you want to set XML document in our case example.xml
 
+
 ====Example file "example.xml".====
 {{{
 <?xml version="1.0" encoding="utf-8"?>
@@ -46,6 +47,7 @@ At the end programming, because the more you want to set XML document in our cas
 
 As result of execution you can see on browser "Hello world!!!"
 
+==Step by step==
 Now step by step we will consider how to set up XML document. I tell on each line.
 ----
 {{{
@@ -65,8 +67,7 @@ This is a required root tag, XPC is beginning to generate a whole page on the ba
 ...
 </container>
 }}}
-
-PC will display the contents of this tag, and the browser it will look like.
+XPC will display the contents of this tag, and the browser it will look like. I call he "Primary template".
 {{{
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="[LANG]" lang="[LANG]">
@@ -76,6 +77,31 @@ PC will display the contents of this tag, and the browser it will look like.
    <body>[CONTENT]</body>
 </html>
 }}}
+In our case it simple HTML document.
 ----
+{{{
+<pages>
+...
+</pages>
+}}}
+The contents of the tag fills the contents of "Primary template" that was provided above.
+----
+{{{
+<out name="header_title">Hello World title</out>
+}}}
+The contents of this tag will fill field [HEADER_TITLE] in "Primary template" and the result will be as follows
+{{{
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="[LANG]" lang="[LANG]">
+   <head>
+      <title>Hello World title</title>
+   </head>
+   <body>[CONTENT]</body>
+</html>
+}}}
+----
+{{{
+<out name="content">Hello World!!!</out>
+}}}
+The same tag as shown above, the difference in that field will be filled [CONTENT].
 ===Download example.===
 [http://xmlpagecontroller.googlecode.com/files/xpc_example.zip]
