@@ -1,4 +1,4 @@
-#summary One-sentence summary of this page.
+#Tags Markup, examples
 
 =Tags=
 Here I will tell tags used by XPC in the XML file.
