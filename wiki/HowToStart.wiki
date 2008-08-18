@@ -46,5 +46,24 @@ At the end programming, because the more you want to set XML document in our cas
 
 As result of execution you can see on browser "Hello world!!!"
 
-===Download example===
+Now step by step we will consider how to set up XML document. I tell on each line.
+----
+{{{
+<?xml version="1.0" encoding="utf-8"?>
+}}}
+This tag, you will probably already familiar because he must apply for each XML file, it said parser rules on what must be read the entire document.
+----
+{{{
+<root>
+...
+</root>	
+}}}
+This is a required root tag, XPC is beginning to generate a whole page on the basis of its contents.
+----
+{{{
+<container type="inline">
+...
+</container>
+}}}
+===Download example.===
 [http://xmlpagecontroller.googlecode.com/files/xpc_example.zip]
