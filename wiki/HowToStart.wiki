@@ -65,5 +65,17 @@ This is a required root tag, XPC is beginning to generate a whole page on the ba
 ...
 </container>
 }}}
+
+PC will display the contents of this tag, and the browser it will look like.
+{{{
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="[LANG]" lang="[LANG]">
+   <head>
+      <title>[HEADER_TITLE]</title>
+   </head>
+   <body>[CONTENT]</body>
+</html>
+}}}
+----
 ===Download example.===
 [http://xmlpagecontroller.googlecode.com/files/xpc_example.zip]
