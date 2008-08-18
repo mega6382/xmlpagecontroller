@@ -89,7 +89,7 @@ The contents of the tag fills the contents of "Primary template" that was provid
 {{{
 <out name="header_title">Hello World title</out>
 }}}
-The contents of this tag will fill field [HEADER_TITLE] in "Primary template" and the result will be as follows
+The contents of this tag will fill field [[HEADER_TITLE]] in "Primary template" and the result will be as follows
 {{{
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="[LANG]" lang="[LANG]">
    <head>
@@ -102,6 +102,6 @@ The contents of this tag will fill field [HEADER_TITLE] in "Primary template" an
 {{{
 <out name="content">Hello World!!!</out>
 }}}
-The same tag as shown above, the difference in that field will be filled [CONTENT].
+The same tag as shown above, the difference in that field will be filled [[CONTENT]] value Hello World!!!
 ===Download example.===
 [http://xmlpagecontroller.googlecode.com/files/xpc_example.zip]
