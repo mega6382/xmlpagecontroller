@@ -9,6 +9,7 @@ Here I will tell tags used by XPC in the XML file.
   * *Accepted attributes name* - _Description of attribute_
    * *Posible value* - _Description of value_
   * ...
+
 {{{
  <!-- Code description -->
  <root>
@@ -22,6 +23,7 @@ Here I will tell tags used by XPC in the XML file.
 _Option to configure XPC in XML file (his can be changed), must be contained between <options>..</options> tags else ignored._
  * *name* - _Name of option (Option ignored if name is not set)_
   * *searchdir* - Directory where XPC must fearch files
+
 {{{
 <!-- Directory search option -->
 <options>
@@ -39,6 +41,7 @@ _Primary template, all fields contained in this tag will be filled by custom val
   * *inline^(default)^* - _Value locate (between this tag)_
   * *file* - _Value locate in file (file name must be between this tag)_
   * *template* - _Value generated from another XML document (file name must be between this tag)_
+
 {{{
 <!-- Simple container -->
 <container>...</container>
@@ -60,6 +63,7 @@ _Named template, used by <out> tag, he help repeat multiple values, must be cont
   * *inline (default)* - _Template locate between this tag_
   * *file* - _Template locate in file (file name must be between this tag)_
   * *template* - _Template generated from another XML document (file name must be between this tag)_
+
 {{{
 <templates>
    <!-- Simple template -->
@@ -96,6 +100,7 @@ _Values containing in this tags fill fields in Primary template located between 
   * *file* - _Value locate in file (file name must be between this tag)_ 
   * *template* - _Value generated from another XML document (file name must be between this tag)_
  * *template* - _Use named templates (must contain template name)_
+
 {{{
  <!-- Imagine that we have such a container -->
  <container>
