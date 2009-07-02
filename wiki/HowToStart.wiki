@@ -12,8 +12,8 @@ As is well known that "XML page controller" further XPC, written in PHP. First, 
 	include "xmlpagecontroller.php"; // Include "XPC" library
 	$page = new xmlpage(		// Create a new instance of class xmlpage with given arguments.
 		'example.xml',		// Where to locate document with the content of pages.
-		"en",			// Language which will be displayed on the pages.
-		true			// Turn debugging information generation.
+		"ru",			// Language which will be displayed on the pages. Default is ("en")
+		true			// Turn debugging information generation. Default is (false)
 	);
 	echo $page->out();		// Output result to browser
 ?>
@@ -82,9 +82,14 @@ Tag "container" mustbe follows in any XML configuration file, one tag per file. 
 In our case it simple HTML documen with fields for templatinng. e.g. [[HEADER_TITLE]], [[CONTENT]]. If this tag not exist in configfile or he is empty XPC fill this "[[CONTENT]]" by default. 
 ----
 {{{
+<pages>...</pages>
+}}}
+Now all content of configfile start beetween this tag.
+----
+{{{
 <out name="header_title">Hello World title</out>
 }}}
-The contents of this tag will fill field [[HEADER_TITLE]] in "Primary template" and the result will be as follows
+The "out" tag mean, what XPC replace [[HEADER_TITLE]] in "container" tag by "Hello World title" text.
 {{{
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="[LANG]" lang="[LANG]">
    <head>
@@ -95,13 +100,16 @@ The contents of this tag will fill field [[HEADER_TITLE]] in "Primary template" 
 }}}
 ----
 {{{
-<pages>...</pages>
-}}}
-Now all content of configfile start beetween this tag.
-----
-{{{
 <out name="content">Hello World!!!</out>
 }}}
-The "out" tag mean, what XPC replace [[CONTENT]] place in "container" tag by "Hello World!!!" text.
+And same way XPC replace [[CONTENT]] in "container" tag by "Hello World!!!" text, and result of his work is.
+{{{
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="[LANG]" lang="[LANG]">
+   <head>
+      <title>Hello World title</title>
+   </head>
+   <body>Hello World!!!</body>
+</html>
+}}}
 ===Download example.===
 [http://xmlpagecontroller.googlecode.com/files/xpc_example.zip]
