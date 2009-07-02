@@ -3,11 +3,11 @@
 =Tags=
 Here I will tell tags used by XPC in the XML file.
 *Important*: All next tags must be located between <root> tag or his be ignored.
-==How to read ==
+==How to read==
  ===<Tag name>, <Tag synonym>, ...===
  _Description of tag_
   * *Accepted attributes name* - _Description of attribute_
-   * *Posible value* - _Description of value_
+   * *_Posible value_* - _Description of value_
   * ...
 
 {{{
@@ -22,21 +22,25 @@ Here I will tell tags used by XPC in the XML file.
 ===<option>===
 _Option to configure XPC in XML file (his can be changed), must be contained between <options>..</options> tags else ignored._
  * *name* - _Name of option (Option ignored if name is not set)_
-  * *searchdir* - Directory where XPC must fearch files
+  * *_searchdir_* - _Directory where XPC must fearch files_
+  * *_language_* - _Using this language to output_
+  * *_lang_* - _Same..._
+
 
 {{{
 <!-- Directory search option -->
 <options>
-   <option name="searchdir">var/home/www/mysite/</option>
-   <option name="searchdir">var/home/www/xml/</option>
-   <option name="searchdir">var/home/www/php/</option>
-   <option name="searchdir">var/home/www/js/</option>
-   <option name="searchdir">var/home/www/css/</option>
+   <option name="searchdir">/var/home/www/mysite/</option>
+   <option name="searchdir">/var/home/www/xml/</option>
+   <option name="searchdir">/var/home/www/php/</option>
+   <option name="searchdir">/var/home/www/js/</option>
+   <option name="searchdir">/var/home/www/css/</option>
 </options>
 }}}
 ----
 ===<container>===
-_Primary template, all fields contained in this tag will be filled by custom values, if container not set XPC make inner container and use it as <container>[[CONTENT]]</container>_
+_Primary template, all fields contained in this tag will be filled by custom values, if container not set or is empty XPC assign this by default:_
+{{{<container>[CONTENT]</container>}}}
  * *type* - _Type of container_
   * *inline^(default)^* - _Value locate (between this tag)_
   * *file* - _Value locate in file (file name must be between this tag)_
@@ -93,7 +97,7 @@ _Named template, used by <out> tag, he help repeat multiple values, must be cont
 }}}
 ----
 ==<out>, <value>, <frame>==
-_Values containing in this tags fill fields in Primary template located between <container>...</container> tags._
+_Values containing in this tags fill fields in "container" or "template" tags._
  * *name* - Name of field located in Primary template to fill, if is not set default name will be [[CONTENT]].
  * *type* - _Type of field_
   * *inline^(default)^* - _Value locate between this tag_
@@ -163,4 +167,51 @@ _Values containing in this tags fill fields in Primary template located between 
  <out name="footer" template="bodyGreen">
     <out name="caption" type="template">xml/thefooter.xml</out>
  </out>
+}}}
+----
+==if==
+_The "if" tag is condition, if condition in this tag is true, XPC include data beetween "if" tag, else XPC start parse next tag.
+
+ * *isset* - _if value is set in variable XPC pass the childrens of this tag to parse next, else skip it_
+ * *noset* - _if value is not set in variable XPC pass the childrens of this tag to parse next, else skip it_
+ * *param* - _parameters like (id == 1) or (id > 10), if is true XPC pass the childrens of this tag to parse next._
+
+By "if" tag get data to comparison from global variables of PHP runtime like $_GET, $_POST, $_REQUEST, by default is $_GET._
+_If you want what "if" tag test condition for another variable like $_POST you must point it like this:_
+{{{
+<!-- Test $_POST array -->
+<if:post ...>...</if:post>
+
+<!-- Test $_PUT array -->
+<if:put ...>...</if:put>
+
+<!-- Test $_REQUEST array -->
+<if:request ...>...</if:request>
+
+<!-- Test $_FILE array -->
+<if:file ...>...</if:file>
+
+<!-- Test $_SERVER array -->
+<if:server ...>...</if:server>
+
+<!-- Test $_SESSION array -->
+<if:session ...>...</if:session>
+ 
+<!-- Test $_ENV array -->
+<if:env ...><if:env>
+
+<!-- Test $_SESSION array -->
+<if:session ...>...</if:session>
+
+<!-- Test is set condition -->
+<if isset="id">
+    <!-- Pass this childrent tag if $_GET["id"] value is set. -->
+    <out name="content">ID is set</out>
+</if>
+
+<!-- Test no set condition -->
+<if noset="id">
+    <!-- Pass this childrent tag if $_GET["id"] value is not set. -->
+    <out name="content">ID is set</out>
+</if>
 }}}
