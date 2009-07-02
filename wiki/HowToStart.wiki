@@ -29,13 +29,13 @@ At the end programming, because the more you want to set XML document in our cas
 <root>
 	<container type="inline">
 	<![CDATA[
-		<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-		<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="[LANG]" lang="[LANG]">
-			<head>
-				<title>[HEADER_TITLE]</title>
-			</head>
-			<body>[CONTENT]</body>
-		</html>
+	    <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+	    <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="[LANG]" lang="[LANG]">
+	        <head>
+	            <title>[HEADER_TITLE]</title>
+            </head>
+	    <body>[CONTENT]</body>
+	    </html>
 	]]>
 	</container>
 	<pages>
@@ -67,24 +67,19 @@ This is a required root tag, XPC is beginning to generate a whole page on the ba
 ...
 </container>
 }}}
-XPC will display the contents of this tag, and the browser it will look like. I call he "Primary template".
+Tag "container" mustbe follows in any XML configuration file, one tag per file. This is primary container what XPC output first.
 {{{
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="[LANG]" lang="[LANG]">
-   <head>
-      <title>[HEADER_TITLE]</title>
-   </head>
-   <body>[CONTENT]</body>
-</html>
+<![CDATA[
+    <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+    <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="[LANG]" lang="[LANG]">
+       <head>
+          <title>[HEADER_TITLE]</title>
+       </head>
+       <body>[CONTENT]</body>
+    </html>
+]]>
 }}}
-In our case it simple HTML document.
-----
-{{{
-<pages>
-...
-</pages>
-}}}
-The contents of the tag fills the contents of "Primary template" that was provided above.
+In our case it simple HTML documen with fields for templatinng. e.g. [[HEADER_TITLE]], [[CONTENT]]. If this tag not exist in configfile or he is empty XPC fill this "[[CONTENT]]" by default. 
 ----
 {{{
 <out name="header_title">Hello World title</out>
@@ -100,8 +95,13 @@ The contents of this tag will fill field [[HEADER_TITLE]] in "Primary template" 
 }}}
 ----
 {{{
+<pages>...</pages>
+}}}
+Now all content of configfile start beetween this tag.
+----
+{{{
 <out name="content">Hello World!!!</out>
 }}}
-The same tag as shown above, the difference in that field will be filled [[CONTENT]] value Hello World!!!
+The "out" tag mean, what XPC replace [[CONTENT]] place in "container" tag by "Hello World!!!" text.
 ===Download example.===
 [http://xmlpagecontroller.googlecode.com/files/xpc_example.zip]
