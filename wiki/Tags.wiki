@@ -4,7 +4,7 @@
 Here I will tell tags used by XPC in the XML file.
 *Important*: All next tags must be located between <root> tag or his be ignored.
 ==How to read==
- ===<Tag name>, <Tag synonym>, ...===
+ ===<<Tag name>>, <<Tag synonym>>, ...===
  _Description of tag_
   * *Accepted attributes name* - _Description of attribute_
    * *_Posible value_* - _Description of value_
