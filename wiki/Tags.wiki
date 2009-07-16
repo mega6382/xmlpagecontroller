@@ -61,7 +61,7 @@ _Primary template, all fields contained in this tag will be filled by custom val
 }}}
 ----
 ===`<template>`===
-_Named template, used by <out> tag, he help repeat multiple values, must be contained between `<templates>...</templates>` tags else ignored._
+_Named template, used by `<out>` tag, he help repeat multiple values, must be contained between `<templates>...</templates>` tags else ignored._
  * *name* - _Name of template_
  * *type* - _Type of template_
   * *inline (default)* - _Template locate between this tag_
