@@ -2,9 +2,9 @@
 
 =Tags=
 Here I will tell tags used by XPC in the XML file.
-*Important*: All next tags must be located between <root> tag or his be ignored.
+*Important*: All next tags must be located between `<root>` tag or his be ignored.
 ==How to read==
- ===<<Tag name>>, <<Tag synonym>>, ...===
+ ===`<Tag name>`, `<Tag synonym>`, ...===
  _Description of tag_
   * *Accepted attributes name* - _Description of attribute_
    * *_Posible value_* - _Description of value_
@@ -19,8 +19,8 @@ Here I will tell tags used by XPC in the XML file.
  </root>
 }}}
 ----
-===<option>===
-_Option to configure XPC in XML file (his can be changed), must be contained between <options>..</options> tags else ignored._
+===`<option>`===
+_Option to configure XPC in XML file (his can be changed), must be contained between `<options>`..`</options>` tags else ignored._
  * *name* - _Name of option (Option ignored if name is not set)_
   * *_searchdir_* - _Directory where XPC must fearch files_
   * *_language_* - _Using this language to output_
@@ -38,7 +38,7 @@ _Option to configure XPC in XML file (his can be changed), must be contained bet
 </options>
 }}}
 ----
-===<container>===
+===`<container>`===
 _Primary template, all fields contained in this tag will be filled by custom values, if container not set or is empty XPC assign this by default:_
 {{{<container>[CONTENT]</container>}}}
  * *type* - _Type of container_
@@ -60,8 +60,8 @@ _Primary template, all fields contained in this tag will be filled by custom val
 <container type="template">xml/left_frame.xml</container>
 }}}
 ----
-===<template>===
-_Named template, used by <out> tag, he help repeat multiple values, must be contained between <templates>...</templates> tags else ignored._
+===`<template>`===
+_Named template, used by <out> tag, he help repeat multiple values, must be contained between `<templates>...</templates>` tags else ignored._
  * *name* - _Name of template_
  * *type* - _Type of template_
   * *inline (default)* - _Template locate between this tag_
@@ -96,7 +96,7 @@ _Named template, used by <out> tag, he help repeat multiple values, must be cont
 </templates>
 }}}
 ----
-==<out>, <value>, <frame>==
+==`<out>`, `<value>`, `<frame>`==
 _Values containing in this tags fill fields in "container" or "template" tags._
  * *name* - Name of field located in Primary template to fill, if is not set default name will be [[CONTENT]].
  * *type* - _Type of field_
@@ -169,7 +169,7 @@ _Values containing in this tags fill fields in "container" or "template" tags._
  </out>
 }}}
 ----
-==if==
+==`<if>`==
 _The "if" tag is condition, if condition in this tag is true, XPC include data beetween "if" tag, else XPC start parse next tag.
 
  * *isset* - _if value is set in variable XPC pass the childrens of this tag to parse next, else skip it_
