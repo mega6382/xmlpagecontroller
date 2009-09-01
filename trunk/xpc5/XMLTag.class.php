@@ -37,7 +37,7 @@ class XMLTag
 	 *
 	 * @access private
 	 *
-	 * @var array
+	 * @var array $m_attrs
 	 */
 	private $m_attrs;
 
@@ -72,7 +72,7 @@ class XMLTag
 	/**
 	 * Class constructor
 	 *
-	 * @access private
+	 * @access public
 	 */
 	public function  __construct()
     {
@@ -124,8 +124,7 @@ class XMLTag
 	 */
 	public function setName( $a_name )
 	{
-		if( is_string( $a_name ) == false || empty ($a_name) ) return;
-		$this->m_parent = $a_name;
+        if( is_string($a_name) && strlen($a_name) ) $this->m_name = $a_name;
 	}
 
 	/**
@@ -149,9 +148,11 @@ class XMLTag
 	 *
 	 * @return null
 	 */
-	public function setChildren( $a_childs )
+	public function setChildrens( $a_childs )
 	{
-		if( is_array( $a_childs ) == false ) return;
+		if( is_array( $a_childs ) == false )
+            return;
+
 		$this->m_children = $a_childs;
 	}
 
@@ -166,7 +167,10 @@ class XMLTag
 	 */
 	public function setParent( XMLTag & $a_parent )
 	{
-		if( !$a_parent ) return;
+		if( !$a_parent )
+            return;
+
+        unset( $this->m_parent );
 		$this->m_parent = $a_parent;
 	}
 
@@ -183,9 +187,23 @@ class XMLTag
 	{
 		if( !$a_child ) return;
 
-		$a_child->setParent( &$this );
+		$a_child->setParent( $this );
 
 		array_push( $this->m_children, $a_child );
+	}
+
+    /**
+	 * Add tag children
+	 *
+	 * @access public
+	 *
+	 * @param XMLTag $a_child
+	 *
+	 * @return null
+	 */
+	public function addChildren( XMLTag & $a_child )
+	{
+		$this->addChild( $a_child );
 	}
 
 	/**
@@ -215,6 +233,20 @@ class XMLTag
 				}
 			}
 		}
+	}
+
+    /**
+	 * Remove tag children
+	 *
+	 * @access public
+	 *
+	 * @param mixed $a_element Can't be string, int, XMLTag
+	 *
+	 * @return null
+	 */
+	public function delChildren( $a_element )
+	{
+        $this->delChild( $a_element );
 	}
 
 	/**
@@ -250,7 +282,7 @@ class XMLTag
 			return $this->m_attrs;
 
 		if( is_null($a_value) )
-			return ( isset($this->m_attrs[$a_name]) ) ? $this->m_attrs[ $a_name ] : null;
+            return key_exists($a_name, $this->m_attrs) ? $this->m_attrs[ $a_name ] : null;
 		else
 			$this->setAttr( $a_name, $a_value );
 	}
@@ -266,7 +298,8 @@ class XMLTag
 	 */
 	public function data( $a_data = null )
 	{
-		if( is_null( $a_data ) == true ) return $this->m_data;
+		if( is_null( $a_data ) )
+            return $this->m_data;
 
 		$this->m_data = $a_data;
 	}
@@ -288,7 +321,7 @@ class XMLTag
 			$this->addChild( $a_child );
 
 		if( is_array( $a_child ) )
-			$this->setChildren($a_childs);
+			$this->setChildrens($a_child);
 	}
 
 	/**
@@ -315,7 +348,9 @@ class XMLTag
 	 */
 	public function parent( XMLTag & $a_parent = null )
 	{
-		if( is_null($a_parent) == true ) return $this->m_parent;
+		if( is_null($a_parent) )
+            return $this->m_parent;
+            
 		$this->setParent($a_parent);
 	}
 }
