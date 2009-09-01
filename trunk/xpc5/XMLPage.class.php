@@ -1,6 +1,5 @@
 <?php
-require_once 'XMLConfig.php';
-require_once 'ZIPReader.php';
+
 interface XMLTagInterface{
 
 	function parse(XMLPage & $object, XMLTag & $node );

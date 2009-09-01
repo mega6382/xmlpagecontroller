@@ -1,11 +1,10 @@
 <?php
 
-require_once 'XMLParser.php';
-
 /*
  * XMLConfig class
  * Description - load data from xml file
  */
+
 class XMLConfig
 {
     /*

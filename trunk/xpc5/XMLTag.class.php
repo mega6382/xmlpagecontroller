@@ -3,6 +3,7 @@
 /*
  * class XMLTag
  */
+
 class XMLTag
 {
 	private $tagName;

@@ -1,9 +1,9 @@
 <?php
 /*
-     * To change this template, choose Tools | Templates
-     * and open the template in the editor.
-     */
-require_once 'XMLPage.php';
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
 class XMLSite
 {
     private $m_options = array('index' => 'index.xml', 'lang' => 'en', 'doctype' => 'traditional', 'base' => '', 'output' => false, 'debug' => false, 'keyname' => 'q', 'keydelimeter' => '/', 'gluescripts' => false, 'gluestyles' => false, 'logspace' => '&nbsp;&nbsp;');

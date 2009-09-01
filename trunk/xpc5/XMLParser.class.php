@@ -1,5 +1,5 @@
 <?php
-    require_once 'XMLTag.php';
+
 
 /*
 * Include XML parser class
