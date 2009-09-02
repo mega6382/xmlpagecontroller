@@ -1949,14 +1949,30 @@ array(
 		$output = $this->applyLocale($output);
 		$output = $this->applyGlobals($output);
 		return $output;
-	}/*
-* function apply
-* args
-*	$temp(string) - String of template
-*	$data(array) - Assocciated array with data for apply to template
-* return
-*	String - Applied data
-*/
+	}
+    
+    private function makeBrace( $key, array $tags = array() )
+    {
+        $ob =& $this->defaultTempate[0];
+        $cb =& $this->defaultTempate[1];
+
+        if ($tags && is_array($tags) && count($tags) == 2 )
+		{
+			unset($ob,$cb);
+			$ob = &$tags[0];
+			$cb = &$tags[1];
+		}
+        return $ob . $key . $cb;
+    }
+    
+    /*
+    * function apply
+    * args
+    *	$temp(string) - String of template
+    *	$data(array) - Assocciated array with data for apply to template
+    * return
+    *	String - Applied data
+    */
 	public function apply($output, $data, array $tags = array(), $case = false )
 	{
 		if (!$data )
@@ -1964,18 +1980,7 @@ array(
 			return $output;
 		}
 
-		$tag_begin= &$this->defaultTempate[0];
-		$tag_end= &$this->defaultTempate[1];
-
-		if ($tags && is_array($tags) && count($tags) == 2 )
-		{
-			unset($tag_begin );
-			unset($tag_end );
-			$tag_begin = &$tags[0];
-			$tag_end = &$tags[1];
-		}
-
-		$text = $output;
+		$text = &$output;
 
 		foreach ($data as $key => $value)
 		{
@@ -1984,8 +1989,8 @@ array(
 				continue;
 			}
 
-			$KEY= $tag_begin . $key . $tag_end;
-			$text = str_ireplace($KEY, $value, $text);//$text	= str_replace( strtoupper($KEY), $value, $text);
+			//$KEY= $tag_begin . $key . $tag_end;
+			$text = str_ireplace( $this->makeBrace($key,$tags), $value, $text);//$text	= str_replace( strtoupper($KEY), $value, $text);
 		}
 
 		return $text;
@@ -1993,25 +1998,23 @@ array(
 
 	private function applyVars(&$out, $case = false )
 	{
-		if (!$out )
-		{
-			return;
-		}
+		if ( !$out )
+            return;
 
 		$tag_begin= &$this->defaultTempate[0];
 		$tag_end= &$this->defaultTempate[1];
+        
 		return $this->apply($out, $this->values, array($tag_begin .'VAR:', $tag_end ), $case );
 	}
 
 	private function applyLocale(&$out, $case = false )
 	{
-		if (!$out )
-		{
-			return;
-		}
+		if ( !$out )
+            return;		
 
-		$tag_begin= &$this->defaultTempate[0];
+        $tag_begin= &$this->defaultTempate[0];
 		$tag_end= &$this->defaultTempate[1];
+		
 		$result = $this->apply($out, $this->locale, array($tag_begin .'LOCALE:', $tag_end ), $case );
 		return $this->apply($result, $this->locale, array($tag_begin .'L:', $tag_end ), $case );
 	}
