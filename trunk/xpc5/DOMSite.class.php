@@ -423,9 +423,7 @@ class DOMSite
         {
             $this->log('Parse index failed');
             return;
-        }
-
-        $this->log('Parse index: "'.$this->m_options['index'].'"' );
+        } else $this->log('Parse index: "'.$this->m_options['index'].'"' );
         
         $this->mf_parse_recursive( $dom->documentElement );
         $kname = &$this->m_options['keyname'];
@@ -496,6 +494,13 @@ class DOMSite
             $this->log("Failed to load case page" );
             return;
         }
+
+		$containerFile = $this->m_options['base'].$this->m_template;
+		if( file_exists($containerFile) == false )
+		{
+			$this->log( 'Container not exist: ' . $containerFile );
+			return;
+		}
 
         //$container = "";
         $cont_ = new DOMDocument();
