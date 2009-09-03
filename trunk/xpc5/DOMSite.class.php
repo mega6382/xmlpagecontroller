@@ -90,7 +90,8 @@ class thePageParser extends SitemapParser
 
     function parse( DOMNode & $node )
     {
-        array_push($this->stack, $node->attr('id') );
+	$id = $node->find_value('id');
+        array_push($this->stack, $id );
         $path = implode('/', $this->stack );
         //$this->log('Page: '. $path);
         $this->instance->parse_recursive($node);
@@ -112,7 +113,9 @@ class DOMSite
 
     private $m_options = array('index' => 'index.xml', 'lang' => 'en', 'doctype' => 'traditional', 'base' => '', 'output' => false, 'debug' => false, 'keyname' => 'q', 'keydelimeter' => '/', 'gluescripts' => false, 'gluestyles' => false, 'logspace' => '&nbsp;&nbsp;');
 
-    private $m_meta = array();
+    private $m_meta = array(
+		'generator'	=> 'XML Page Cpntroller'
+	);
 
     private $m_log = array();
 
@@ -172,13 +175,16 @@ class DOMSite
     public function addPage( $name, DOMNode & $node )
     {
         if( !$name || !is_string($name) || !strlen($name) )
+		{
+
             return;
+		}
 
         if( !$node )
             return;
 
         $this->m_pages[ $name ] = $node;
-        //$this->log('Add Page "'. $name . '"');
+        $this->log('Add Page "'. $name . '"');
     }
 
     public function parse_recursive( DOMNode & $node )
@@ -207,7 +213,12 @@ class DOMSite
             return null;
         }
 
-        $p_ = new XMLPage(array('index' => $filename, 'lang' => $this->m_options['lang'], 'templateTag' => array('{', '}', 'CONTENT') ));
+        $p_ = new XMLPage( array(
+	    'index' => $filename,
+	    'lang' => $this->m_options['lang'],
+	    'templateTag' => array('{', '}', 'CONTENT'),
+	    'debug' => true
+	));
         return $p_;
     }
 
@@ -403,6 +414,9 @@ class DOMSite
         {
             array_push($this->m_styles['inline'], "\n/***** inline style *****/\n" . $s );
         }
+
+	if( key_exists('page_log', $this->m_options) && $this->m_options['page_log'] )
+	    $this->m_log = array_merge( $this->m_log, $page->_log );
     }
 
     public function out()
@@ -475,7 +489,7 @@ class DOMSite
             }
             else
             {
-                $this->log('Page not found', 1);
+                $this->log('Page "'.$kval.' is not exist"', 1);
 
                 if ( array_key_exists("page_not_found", $this->m_pages) )
                 {
@@ -483,7 +497,7 @@ class DOMSite
                 }
                 else
                 {
-                    $this->log('page_not_found undefined', 2);
+                    $this->log('Page "page_not_found" is undefined', 2);
                     return;
                 }
             }
@@ -510,6 +524,7 @@ class DOMSite
         }
 
         $html = new DOMDocumentSimpler();//DOMDocument();
+
         $html->registerNodeClass('DOMElement','DOMElementSimpler');
         $html->registerNodeClass('DOMDocument','DOMDocumentSimpler');
 
@@ -533,13 +548,13 @@ class DOMSite
 */
 
         $cont_ = $this->mf_make_page( $this->m_options['template'] );
-        $container = "";
+        
+		$body = " ";
         if ( $cont_ )
         {
             $this->log( 'Container: ' . $this->m_options['template'] );
             
-            $container = $cont_->out(false);
-
+            $body = $cont_->out(false);
             $this->pf_copy_attachments($cont_);
         }
         else
@@ -548,14 +563,27 @@ class DOMSite
             return;
         }
 
-        $body = " ";
+        
 
         $page_ = $this->mf_make_page( $page->attr('id') . '.xml' );
 
         if ($page_ )
         {
-            $body = $page_->out(false);
+            $page_->out(false);
             $this->pf_copy_attachments($page_);
+
+	    $arr = array();
+
+	    foreach ( $page_->outdata as $key => $val )
+	    {
+
+		$k = $page_->defaultTempate[0] . $key . $page_->defaultTempate[1];
+
+		$this->log( 'Try apply: ' . $k );
+
+		$body = str_ireplace($k, $val, $body);
+
+	    }
         }
         else
         {
@@ -576,8 +604,6 @@ class DOMSite
 
         $_body = $head->nextSibling;
 
-        /*$tag = $html->createElement('title',$this->m_pagedefaults['title']);
-        $head->appendChild( $tag );*/
 
         $html->setTitle('Hello title');
 
@@ -597,8 +623,6 @@ class DOMSite
         {
             $inlinescript .= $s . "\n";
         }
-
-      //  print_r($this->m_scripts['inline']);
 
         foreach ($this->m_styles['inline'] as $s )
         {
