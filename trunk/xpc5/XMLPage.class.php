@@ -20,15 +20,22 @@ abstract class XMLTagParser
 	{
 		return $this->m_tagName;
 	}
-}/*
-* XML page controller - class
-*/
+}
+
+/**
+ *  XML page controller - class
+ * 
+ */
+
 class XMLPage
-{/*
-* XML defined options
-*/
+{
+    /**
+     * XML defined options
+     *
+     */
 	var $options = array("image_dir"=>'');
-	var $userParser = array();/*
+	var $userParser = array();/**
+	 * 
 * File search directories from XML defined options
 */
 	var $searchDir = array(''// Current dir
@@ -188,10 +195,8 @@ else */
 */
 	private function parseValue(XMLTag & $node )
 	{
-		if (!$node )
-		{
-			return;
-		}
+	    if (!$node )
+		    return;
 
 		$lang = &$this->lang;
 		$attrs = $node->attr();
@@ -201,158 +206,155 @@ else */
 		$ret = null;
 
 		if ($lang_attr && $lang_attr != $this->lang )
+		    return '';
+
+		if ( $node->attr('template') )
 		{
-			return '';
+		    $container= $this->defaultTempate[0].$this->defaultTempate[2].$this->defaultTempate[1];
+
+		    $template_name= $node->attr('template');
+
+		    if ( isset( $this->templates[ $template_name ] ) )
+		    {
+			$this->log("Use template: '{$template_name}'");
+			$container = &$this->templates[ $template_name ];
+		    }
+		    else
+		    {
+			$tlist = "";
+
+			foreach ($this->templates as $k => $v )
+			{
+			    $tlist .= $k . ", ";
+			}
+
+			$this->log("Template not found: '{$template_name}', from: " . $tlist . " total: " . count($this->templates) . 'use default: ' . $container );
+		    }
+
+		    $this->pushContent();
+
+		    foreach ($node->children() as $item )
+		    {
+			$this->parseNode($item, $node );
+		    }
+
+		    $data = $this->outdata;
+		    $this->popContent();
+		    return $this->apply($container, $data );
 		}
 
-		if ($node->attr('template') )
+		switch ( $type_attr )
 		{
-			$container= $this->defaultTempate[0].$this->defaultTempate[2].$this->defaultTempate[1];
-			$template_name= $node->attr('template');
-
-			if (isset($this->templates[ $template_name ] ) )
-			{
-				$this->log("Use template: '{$template_name}'");
-				$container = &$this->templates[ $template_name ];
-			}
-			else
-			{
-				$tlist = "";
-
-				foreach ($this->templates as $k => $v )
-				{
-					$tlist .= $k . ", ";
-				}
-
-				$this->log("Template not found: '{$template_name}', from: " . $tlist . " total: " . count($this->templates) . 'use default: ' . $container );
-			}
-
-			$this->pushContent();
-
-			foreach ($node->children() as $item )
-			{
-				$this->parseNode($item, $node );
-			}
-
-			$data = $this->outdata;
-			$this->popContent();
-			return $this->apply($container, $data );
-		}
-
-		switch ($type_attr )
-		{
-			default:case 'inline':
-			{
-				$ret = $node->data();
-			}
-
+		    default:
+		    case 'inline':
+			$ret = $node->data();
 			break;
-		case 'template':
-		case 'layout':
-		case 'xml':
-			{//__debug_message('Parse: ' .$node->name());
-				$t = $this->applyGlobals($node->data() );
-				$this->log('Parse templated value from: ' . $t );
-				$t = $this->findindir($t);
 
-				if ($t )
-				{//$x = new XMLParser( file_get_contents($t),true);
-					$x = new XMLParser($t, true);
-					$ret = $this->addXML($x->Parse() );
-				}
-				else
-				{
-					$this->log('<b>File not found</b>: '. $node->data() );
-				}
-			}
-
-			break;
-		case 'file':
+		    case 'template':
+		    case 'layout':
+		    case 'xml':
 			{
+			    $t = $this->applyGlobals( $node->data() );
+			    $this->log('Parse templated value from: ' . $t );
+			    $t = $this->findindir($t);
+
+			    if ($t )
+			    {
+				$x = new XMLParser($t, true);
+				$ret = $this->addXML($x->Parse() );
+			    }
+			    else
+				$this->log('<b>File not found</b>: '. $node->data() );
+			}
+			break;
+
+		    case 'file':
+			    {
 				$data = $this->applyGlobals($node->data() );
 				$dir = $this->findindir($data);
 
 				if ($dir )
 				{
-					$this->log('Read file: '. $dir);
-					$ret = file_get_contents($dir );
+				    $this->log('Read file: '. $dir);
+				    $ret = file_get_contents($dir );
 				}
 				else
-				{
-					$this->log('<b>File not found</b>: '.$data);
-				}
-			}
+				    $this->log('<b>File not found</b>: '.$data);
+			    }
+			    break;
 
-			break;
-		case 'php':
-		case 'module':
-		case 'script':
-			{
-				$ret = $this->applyGlobals($node->data() );
-				$ret = $this->addPHPFile($ret, $name_attr );
-			}
+		    case 'php':
+		    case 'module':
+		    case 'script':
+			    {
+				    $ret = $this->applyGlobals($node->data() );
+				    $ret = $this->addPHPFile($ret, $name_attr );
+			    }
 
-			break;
-		case 'config':
-			{
-				$f = $this->applyGlobals($node->data() );
+			    break;
 
-				if (is_string($f ) == false )
-				{
-					break;
-				}
+	    case 'config':
+		    {
+			    $f = $this->applyGlobals($node->data() );
 
-				$c = 0;
+			    if (is_string($f ) == false )
+			    {
+				    break;
+			    }
 
-				if (isset($this->configs[ $f ] ) && is_a($this->configs[ $f ], 'XMLConfig' ) )
-				{
-					$c = &$this->configs[$f];
-				}
-				else
-				{
-					$c = new XMLConfig();
-					$c->load($f );
-					$this->configs[ $f ] = &$c;
-				}
+			    $c = 0;
 
-				if (!$c )
-				{
-					$this->log("Config: file not found '".$f."'");
-					break;
-				}
+			    if (isset($this->configs[ $f ] ) && is_a($this->configs[ $f ], 'XMLConfig' ) )
+			    {
+				    $c = &$this->configs[$f];
+			    }
+			    else
+			    {
+				    $c = new XMLConfig();
+				    $c->load($f );
+				    $this->configs[ $f ] = &$c;
+			    }
 
-				$ret = $c->get($name_attr);
+			    if (!$c )
+			    {
+				    $this->log("Config: file not found '".$f."'");
+				    break;
+			    }
 
-				if ($ret == false)
-				{
-					$this->log("Config value is invalid: '".$name_attr."', at file:'".$f."'");
-				}
-			}
+			    $ret = $c->get($name_attr);
 
-			break;
-		case 'gz':
-		case 'zip':
-		case 'zipfs':
-		case 'gzfs':
-			{
-				$f = $this->applyGlobals($node->data() );//if( is_string( $f ) == false ) break;
-				$r = $this->addZip($f);
+			    if ($ret == false)
+			    {
+				    $this->log("Config value is invalid: '".$name_attr."', at file:'".$f."'");
+			    }
+		    }
+		    break;
 
-				if ($r )
-				{
-					$ret = $r;
-				}
-			}
+	    case 'gz':
+	    case 'zip':
+	    case 'zipfs':
+	    case 'gzfs':
+		    {
+			    $f = $this->applyGlobals($node->data() );//if( is_string( $f ) == false ) break;
+			    $r = $this->addZip($f);
 
-			break;
-		}
+			    if ($r )
+			    {
+				    $ret = $r;
+			    }
+		    }
 
-		return $this->applyGlobals($ret);
-	}/*
-* function parseRecursive (for inner usage) - Recursive iteration in tag nodes
-* args
-*	$node(XMLTag) - Node where start iteration
-*/
+		    break;
+	    }
+
+	    return $this->applyGlobals($ret);
+	}
+
+	/**
+	* function parseRecursive (for inner usage) - Recursive iteration in tag nodes
+	* args
+	*	$node(XMLTag) - Node where start iteration
+	*/
 	private function parseRecursive(XMLTag & $node, $parent = null )
 	{
 		if (!$node )
@@ -1362,7 +1364,7 @@ $this->tempnode = '';
 
 			break;
 		case 'var':
-			$this->addVar($attrName, $this->parseValue($node ) );
+			$this->addVar($attrName, $this->parseValue($node) );
 			break;/*case 'vars':
 case 'values':
 {
@@ -1632,21 +1634,15 @@ break;*/
 
 	public function addVar($name, $value )
 	{
-		if (!$name || !is_string($name) )
-		{
-			return;
-		}
+		if (!$name || !is_string($name) || !strlen($value) )
+		    return;
 
-		if (!isset($this->values[$name] ) )
-		{
-			$this->log('Add variable "'.$name.'", size: '. strlen($value ) . ' = ' . $value );
-		}
+		if ( key_exists($name, $this->values) == false )
+		    $this->log('Add variable "'.$name.'", size: '. strlen($value ) . ' = ' . $value );
 		else
-		{
-			$this->log('Change variable "'.$name.'", size: '. strlen($value ) . ' = ' . $value );
-		}
+		    $this->log('Change variable "'.$name.'", size: '. strlen($value ) . ' = ' . $value );
 
-		$this->values[ $name ] = $value;
+		$this->values[ $name ] = $this->applyVars($value);
 	}
 
 	public function addCollection(XMLTag & $node )
@@ -1792,7 +1788,7 @@ break;*/
 	{
 		if (!$name )
 		{
-			$name = $this->defaultTempate[2];
+		    $name = $this->defaultTempate[2];
 		}//$this->log( 'Value "'. $name . '": '. strlen($data) );
 		$name = strtolower($name );
 
@@ -2059,6 +2055,8 @@ array(
 			$output = $this->apply($output, $_COOKIE, array($tag_begin.'COOKIE:', $tag_end), $case );
 			$output = $this->apply($output, $_COOKIE, array($tag_begin.'COOKIES:', $tag_end), $case );
 		}
+
+		if( isset($this->values) ) $output = $this->applyVars($output);
 
 		return $output;
 	}/*
