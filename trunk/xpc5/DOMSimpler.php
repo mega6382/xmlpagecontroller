@@ -9,20 +9,21 @@ class DOMDocumentSimpler extends DOMDocument
             return false;
 
         $html = null;
-        foreach( $this->xpath('//html') as $i) $head = $i;
+
+        foreach( $this->getElementsByTagName('html') as $i) $html = $i;
+
+	//if( is_null($html) ){ echo 'Element is null <br />'; }
 
         if( !$html ) return;
 
         $head = null;
 
-        foreach( $html->child() as $c )
+        foreach( $html->getElementsByTagName('head') as $c )
         {
-            if( $c->name() == 'head' )
-            {
-                $head = $c;
-                break;
-            }
-        }
+	    $head = $c;
+	}
+
+	//if( is_null($html) ){ echo 'Element is null <br />'; }
 
         if( !$head )
         {
@@ -31,19 +32,15 @@ class DOMDocumentSimpler extends DOMDocument
         }
 
         $title = null;
-        foreach( $head->child() as $c )
+        foreach( $head->getElementsByTagName('title') as $c )
         {
-            if( $c->name() == 'title' )
-            {
-                $title = $c;
-                break;
-            }
+	    $title = $c;
         }
 
         if( !$title )
         {
             $title = $this->createElement('title');
-            $html->appendChildren( $title );
+            $html->appendChild( $title );
         }
 
         return $title->data( $a_title );
@@ -82,16 +79,24 @@ class DOMDocumentSimpler extends DOMDocument
     {
         $r = array();
 
-        if( !$query || is_string($query) == false || !strlen( $query ) ) return $r;
+        if( !$query || is_string($query) == false || !strlen( $query ) )
+	    return $r;
 
         $x = new DOMXPath($this);
-        $a = $x->query( $query );
 
-        foreach( $a as $i )
-        {
-            if( $i->nodeType == XML_ELEMENT_NODE )
-                array_push($r,$i);
-        }
+	
+	ob_start();
+	$a = $x->query( $query );
+	ob_end_clean();
+
+	if( !$a )
+	    return $r;
+
+	foreach( $a as $i )
+	{
+	    if( $i->nodeType == XML_ELEMENT_NODE )
+		array_push($r,$i);
+	}
 
         return $r;
     }
@@ -147,10 +152,26 @@ class DOMElementSimpler extends DOMElement
             $this->appendChild($tnode);
         }
     }
+	
+    function find_value( $a_val_name )
+    {
+	    if( !$a_val_name || !is_string( $a_val_name ) || !strlen( $a_val_name ) )
+		    return null;
+
+	    $val = $this->attr( $a_val_name );
+	    if( !is_null($val) ) return $val;
+
+	    foreach( $this->child() as $c )
+	    {
+		    if( $c->name() == $a_val_name ) return $c->data();
+	    }
+
+	    return null;
+    }
 
     function appendStyleFile( $filename )
     {
-        echo 'Append style file <br />';
+      //  echo 'Append style file <br />';
         if( !$filename || !is_string( $filename ) || !strlen($filename) )
             return false;
 
