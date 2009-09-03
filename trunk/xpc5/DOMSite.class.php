@@ -1,175 +1,115 @@
 <?php
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-class DOMDocumentSimpler extends DOMDocument
+
+require_once dirname(__FILE__).'/DOMSimpler.php';
+
+interface ISitemapParser
 {
-    function addStyleFile( $filename )
+    public function parse( DOMNode & $node );
+    public function name();
+}
+
+abstract class SitemapParser implements ISitemapParser
+{
+    protected $instance = null;
+    public final function setInstance( DOMSite & $instance ){ $this->instance = $instance; }
+}
+
+class theRecursionParser extends SitemapParser
+{
+    function name()
     {
-        if( !$filename || !is_string( $filename ) || !strlen($filename) )
-            return false;
-
-        $head = null;
-        foreach( $this->xpath('//html/head') as $i) $head = $i;
-
-        if( !$head ) return false;
-
-        return $head->appendStyleFile($filename);
+        return 'site root config conf metas options';
     }
 
-    function addStyle( $style )
+    function parse( DOMNode & $node )
     {
-        if( !$style || !is_string( $style ) || !strlen($style) )
-            return false;
-
-        $body = null;
-
-        foreach( $this->xpath('//html/body') as $i)
-            $body = $i;
-
-        if( !$body )
-            return false;
-
-        return $body->appendStyle($style);
-    }
-
-    function xpath( $query )
-    {
-        $r = array();
-
-        if( !$query || is_string($query) == false || !strlen( $query ) ) return $r;
-
-        $x = new DOMXPath($this);
-        $a = $x->query( $query );
-
-        
-
-        foreach( $a as $i )
-        {
-            if( $i->nodeType == XML_ELEMENT_NODE )
-                array_push($r,$i);
-        }
-
-        return $r;
+        $this->instance->parse_recursive($node);
     }
 }
 
-class DOMElementSimpler extends DOMElement
+
+class theOptionParser extends SitemapParser
 {
-    function attr( $name = null, $value = null )
+    function name()
     {
-        if( is_null($name) )
-        {
-            $arr = array();
-            return $arr;
-        }
-
-        if( is_null($value) )
-        {
-            return ( $this->hasAttribute($name) ) ? $this->getAttribute($name) : null;
-        }
-
-        return  $this->setAttribute( $name, $value );
+        return 'option';
     }
 
-    function child()
+    function parse( DOMNode & $node )
     {
-        $res = array();
+        $this->instance->addOption( $node->attr('name'), $node->data() );
+    }
+}
 
-        foreach( $this->childNodes as $item )
-        {
-            if( $item->nodeType != XML_ELEMENT_NODE ) continue;
-            array_push( $res, $item );
-        }
-        return $res;
+class theOptionsParser extends SitemapParser
+{
+    function name()
+    {
+        return 'options';
     }
 
-    function name( $name = null )
+    function parse( DOMNode & $node )
     {
-        if( is_null( $name ) )
-            return strlen($this->tagName) ? $this->tagName : null;
+        foreach( $node->child() as $n )
+            $this->instance->addOption( $n->name(), $n->data() );
+    }
+}
 
-        if( is_string( $name ) && strlen($name) )
-            $this->tagName = $name;
+class theMetasParser extends SitemapParser
+{
+    function name()
+    {
+        return 'metas';
     }
 
-    function data( $data = null )
+    function parse( DOMNode & $node )
     {
-        if( is_null( $data ) )
-            return strlen($this->textContent) ? $this->textContent : null;
+        foreach( $node->child() as $n )
+            $this->instance->addMeta( $n->name(), $n->data() );
+    }
+}
 
-        if( is_string( $data ) && strlen($data) )
-        {
-            $tnode = $this->ownerDocument->createTextNode($data);
-            $this->appendChild($tnode);
-        }
+class theMetaParser extends SitemapParser
+{
+    function name()
+    {
+        return 'meta';
     }
 
-    function appendStyleFile( $filename )
+    function parse( DOMNode & $node )
     {
-        if( !$filename || !is_string( $filename ) || !strlen($filename) )
-            return false;
-
-        $node = $this->ownerDocument->createElement('link');
-        $node->attr('rel', 'stylesheet');
-        $node->attr('type', 'text/css');
-        $node->attr('href', $filename);
-
-        return $this->appendChild( $node );
+        $this->instance->addMeta( $node->attr('name'), $node->data() );
     }
-    
-    function addpendCssFile($filename)
+}
+
+class thePageParser extends SitemapParser
+{
+    var $stack = array();
+
+    function name(){ return 'page'; }
+
+    function parse( DOMNode & $node )
     {
-        return $this->appendStyleFile($filename);
+        array_push($this->stack, $node->attr('id') );
+        $path = implode('/', $this->stack );
+        //$this->log('Page: '. $path);
+        $this->instance->parse_recursive($node);
+        $this->instance->addPage( $path, $node );
+        array_pop($this->stack);
     }
+}
 
-    function appendJavaScriptFile( $filename )
+class DOMPage
+{
+    public function __construct()
     {
-        if( !$filename || !is_string( $filename ) || !strlen($filename) )
-            return false;
-
-        $node = $this->ownerDocument->createElement('script');
-        $node->attr('type', 'text/javascript');
-        $node->attr('src', $filename);
-
-        return $this->appendChild( $node );
     }
-
-    function addpendJSFile($filename)
-    {
-        return $this->appendJavaScriptFile($filename);
-    }
-
-    function appendStyle($style)
-    {
-        if( !$style || !is_string($style) || !strlen($style) )
-                return false;
-
-         return $this->appendChild( $this->ownerDocument->createTextNode($style) );
-    }
-
-    function appendCss($css)
-    {
-        return $this->appendStyle($css);
-    }
-
-   /* function xpath( $query )
-    {
-        if( !$query || is_string($query) || !strlen( $query ) ) return;
-
-        $x = new DOMXPath($query);
-        $a = $x->query( $query );
-
-        $r = array();
-
-        foreach( $a as $i ) if( $i->nodeType == XML_ELEMENT_NODE ) array_push($a,$i);
-        return $r;
-    }*/
 }
 
 class DOMSite
 {
+    private $m_parser_instance = array();
+
     private $m_options = array('index' => 'index.xml', 'lang' => 'en', 'doctype' => 'traditional', 'base' => '', 'output' => false, 'debug' => false, 'keyname' => 'q', 'keydelimeter' => '/', 'gluescripts' => false, 'gluestyles' => false, 'logspace' => '&nbsp;&nbsp;');
 
     private $m_meta = array();
@@ -205,10 +145,46 @@ class DOMSite
         }
     }
 
-    private function mf_parse_recursive( DOMNode & $node )
+    public function addOption( $key, $value )
+    {
+        if( !$key || !is_string($key) || !strlen($key) )
+            return;
+
+        if( !$value || !is_string($value) || !strlen($value) )
+            return;
+
+        $this->m_options[ $key ] = $value;
+        //$this->log( 'Add Option "'.$key.'"' );
+    }
+
+    public function addMeta( $key, $value )
+    {
+        if( !$key || !is_string($key) || !strlen($key) )
+            return;
+
+        if( !$value || !is_string($value) || !strlen($value) )
+            return;
+
+        $this->m_meta[ $key ] = $value;
+        //$this->log( 'Add Meta "'.$key.'"' );
+    }
+
+    public function addPage( $name, DOMNode & $node )
+    {
+        if( !$name || !is_string($name) || !strlen($name) )
+            return;
+
+        if( !$node )
+            return;
+
+        $this->m_pages[ $name ] = $node;
+        //$this->log('Add Page "'. $name . '"');
+    }
+
+    public function parse_recursive( DOMNode & $node )
     {
         $this->m_log_stacksize += 1;
-        foreach ( $node->child() as $item ) $this->mf_parse_node( $item );
+        foreach ( $node->child() as $item ) $this->parse_node( $item );
         $this->m_log_stacksize -= 1;
     }
 
@@ -235,7 +211,7 @@ class DOMSite
         return $p_;
     }
 
-    private function mf_parse_node( DOMNode & $node )
+    public function parse_node( DOMNode & $node )
     {
         if (!$node )
         {
@@ -243,10 +219,27 @@ class DOMSite
         }
 
         $nodeName = $node->name();
+
+        //print_r($this->m_parser_instance);
+
+        //echo $nodeName . '<br />';
+        if( key_exists( strtolower($nodeName), $this->m_parser_instance ) == false )
+        {
+            $this->log('Sitemap parser not exist: "'. strtolower($nodeName) .'"');
+            return;
+        }
+
+        $parser =& $this->m_parser_instance[ strtolower($nodeName) ];
+        
+        $parser->parse($node);  
+
+        return;
+
         $attrName = $node->attr('name');
 
         switch ($nodeName )
         {
+            case 'conf':
             case 'config':
                 {
                     $this->log('Config');
@@ -319,7 +312,7 @@ class DOMSite
             case 'page':
                 {
                     $path = "";
-                    array_push($this->m_pagestack, $attrName );
+                    array_push($this->m_pagestack, $node->attr('id') );
 
                     $path = implode('/', $this->m_pagestack );
 
@@ -327,7 +320,7 @@ class DOMSite
                     $this->mf_parse_recursive($node);
                     $this->m_pages[$path] = $node;
                     
-                    array_pop($this->m_pagestack );
+                    array_pop($this->m_pagestack);
                 }
 
                 break;
@@ -414,18 +407,52 @@ class DOMSite
 
     public function out()
     {
+        foreach( get_declared_classes() as $decl )
+        {
+            if( !is_subclass_of($decl, 'SitemapParser') ) continue;
+            
+            $instance = new $decl();
+            $declname = $instance->name();
+
+            if( !$declname || !is_string($declname) || !strlen($declname) || $declname == 'undefined_parser' )
+                continue;
+
+            $instance->setInstance($this);
+            $keys = explode( ' ', $declname );
+
+            foreach( $keys as $k )
+            {
+                $k = trim($k);
+
+                if( !$k  ) continue;
+
+                $this->m_parser_instance[ $k ] = $instance;
+            }
+            //$this->log( 'Register "'. implode(', ',$keys) .'" in '.$decl.' class' );
+        }
+
         $this->m_dom_main = new DOMDocument();
         $dom =& $this->m_dom_main;
+
         $dom->registerNodeClass('DOMElement','DOMElementSimpler');
         $dom->registerNodeClass('DOMDocument','DOMDocumentSimpler');
 
-        if( $dom->load( $this->m_options['index'] ) == false )
+        $indexfile = $this->m_options['index'];
+
+        if( file_exists($indexfile) == false )
+        {
+            $this->log('Index file not exist');
+            return;
+        }
+
+        if( $dom->load( $indexfile ) == false )
         {
             $this->log('Parse index failed');
             return;
+
         } else $this->log('Parse index: "'.$this->m_options['index'].'"' );
         
-        $this->mf_parse_recursive( $dom->documentElement );
+        $this->parse_node( $dom->documentElement );
         $kname = &$this->m_options['keyname'];
 
         if (!$kname )
@@ -450,13 +477,14 @@ class DOMSite
             {
                 $this->log('Page not found', 1);
 
-                if (array_key_exists("page_not_found", $this->m_pages) )
+                if ( array_key_exists("page_not_found", $this->m_pages) )
                 {
                     $page = &$this->m_pages[ "page_not_found" ];
                 }
                 else
                 {
                     $this->log('page_not_found undefined', 2);
+                    return;
                 }
             }
         }
@@ -495,30 +523,34 @@ class DOMSite
             return;
         }
 
-		$containerFile = $this->m_options['base'].$this->m_template;
-		if( file_exists($containerFile) == false )
-		{
-			$this->log( 'Container not exist: ' . $containerFile );
-			return;
-		}
+	
+       /* $containerFile = $this->m_options['base'].$this->m_options['template'];
+	if( file_exists($containerFile) == false )
+	{
+            $this->log( 'Container not exist: ' . $containerFile );
+            return;
+	}
+*/
 
-        //$container = "";
-        $cont_ = new DOMDocument();
-
-        if ( $cont_->load( $this->m_options['base'].$this->m_template ) )
+        $cont_ = $this->mf_make_page( $this->m_options['template'] );
+        $container = "";
+        if ( $cont_ )
         {
-            //$container = $cont_->saveHTML();
-            //$this->pf_copy_attachments($cont_ );
+            $this->log( 'Container: ' . $this->m_options['template'] );
+            
+            $container = $cont_->out(false);
+
+            $this->pf_copy_attachments($cont_);
         }
         else
         {
-            $this->log("Failed to load template page " . $this->m_options['base'].$this->m_template );
+            $this->log("Failed to load template page " . $containerFile );
             return;
         }
 
-        $body = "";
+        $body = " ";
 
-        $page_ = $this->mf_make_page( $page->attr('name') . '.xml' );
+        $page_ = $this->mf_make_page( $page->attr('id') . '.xml' );
 
         if ($page_ )
         {
@@ -544,8 +576,10 @@ class DOMSite
 
         $_body = $head->nextSibling;
 
-        $tag = $html->createElement('title',$this->m_pagedefaults['title']);
-        $head->appendChild( $tag );
+        /*$tag = $html->createElement('title',$this->m_pagedefaults['title']);
+        $head->appendChild( $tag );*/
+
+        $html->setTitle('Hello title');
 
         foreach ($this->m_meta as $key => $val )
         {
@@ -563,6 +597,9 @@ class DOMSite
         {
             $inlinescript .= $s . "\n";
         }
+
+      //  print_r($this->m_scripts['inline']);
+
         foreach ($this->m_styles['inline'] as $s )
         {
             $inlinestyle .= $s . "\n";
@@ -570,17 +607,19 @@ class DOMSite
 
         foreach ($this->m_styles['include'] as $s )
         {
-            if( $html->addStyleFile($s) == false ) $this->log('Failed to append style: ' . $s);
+            if( $html->addStyleFile($s) == false )
+                $this->log('Failed to append style: ' . $s);
         }
 
         if (strlen($inlinestyle) )
         {
-            if( $html->addStyle($inlinestyle) == false ) $this->log('Failed to append inline style');
+            if( $html->addStyle($inlinestyle) == false )
+                $this->log('Failed to append inline style');
         }
         
         $fr = $html->createDocumentFragment();
-        $fr->appendXML( $body );
-        $_body->appendChild($fr);
+        $fr->appendXML( $container.$body );
+        $_body->appendChild( $fr );
 
         foreach ($this->m_scripts['include'] as $s )
         {
