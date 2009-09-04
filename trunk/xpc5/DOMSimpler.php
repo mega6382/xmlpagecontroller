@@ -8,42 +8,37 @@ class DOMDocumentSimpler extends DOMDocument
         if( !$a_title || !is_string( $a_title ) || !strlen($a_title) )
             return false;
 
-        $html = null;
-
-        foreach( $this->getElementsByTagName('html') as $i) $html = $i;
-
-	//if( is_null($html) ){ echo 'Element is null <br />'; }
-
-        if( !$html ) return;
-
-        $head = null;
-
-        foreach( $html->getElementsByTagName('head') as $c )
+        $titleNode = $this->getElementsByTagName('title')->item(0);
+        if( $titleNode == null )
         {
-	    $head = $c;
-	}
+            $headNode = $this->getElementsByTagName('head')->item(0);
+            if( $headNode == null )
+                return false;
 
-	//if( is_null($html) ){ echo 'Element is null <br />'; }
-
-        if( !$head )
-        {
-            $head = $this->createElement('head');
-            $html->appendChildren( $head );
+            $titleNode = $this->createElement('title',$a_title);
+            $headNode->appendChild( $titleNode );
+            return true;
         }
 
-        $title = null;
-        foreach( $head->getElementsByTagName('title') as $c )
-        {
-	    $title = $c;
-        }
+        $titleNode->data( $a_title );
 
-        if( !$title )
-        {
-            $title = $this->createElement('title');
-            $html->appendChild( $title );
-        }
+        return true;
+    }
 
-        return $title->data( $a_title );
+    function addMeta( $a_key, $a_value )
+    {
+        $head = $this->getElementsByTagName('head')->item(0);
+        
+        if( $head === null )
+            return;
+
+            //echo 'Meta is: ' . $head;
+
+        $tag = $this->createElement('meta', '');
+        $tag->attr('name', $a_key);
+        $tag->attr('content', $a_value);
+
+        $head->appendChild( $tag );
     }
 
     function addStyleFile( $filename )
