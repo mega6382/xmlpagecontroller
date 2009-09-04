@@ -70,6 +70,40 @@ class DOMDocumentSimpler extends DOMDocument
         return $body->appendStyle($style);
     }
 
+    function addScript( $script )
+    {
+	if( !$script || !is_string( $script ) || !strlen($script) )
+            return false;
+
+	$body = $this->getElementsByTagName('body');
+
+	if( !$body )
+	    return;
+
+	$newnode = $this->createElement('script');
+	$newnode->attr( 'type', 'text/javascript' );
+	$newnode->data( $script );
+
+	$body->appendChild( $newnode );
+    }
+
+    function addScriptFile( $script )
+    {
+	if( !$script || !is_string( $script ) || !strlen($script) )
+            return false;
+
+	$body = $this->getElementsByTagName('body');
+
+	if( !$body )
+	    return;
+
+	$newnode = $this->createElement('script');
+	$newnode->attr( 'type', 'text/javascript' );
+	$newnode->attr( 'src', $script );
+
+	$body->appendChild( $newnode );
+    }
+
     function xpath( $query )
     {
         $r = array();
@@ -115,6 +149,11 @@ class DOMElementSimpler extends DOMElement
         return  $this->setAttribute( $name, $value );
     }
 
+    function parent()
+    {
+	return $this->parentNode;
+    }
+
     function child()
     {
         $res = array();
@@ -146,6 +185,11 @@ class DOMElementSimpler extends DOMElement
             $tnode = $this->ownerDocument->createTextNode($data);
             $this->appendChild($tnode);
         }
+    }
+
+    function document()
+    {
+	return $this->ownerDocument;
     }
 	
     function find_value( $a_val_name )
@@ -217,18 +261,6 @@ class DOMElementSimpler extends DOMElement
         return $this->appendStyle($css);
     }
 
-   /* function xpath( $query )
-    {
-        if( !$query || is_string($query) || !strlen( $query ) ) return;
-
-        $x = new DOMXPath($query);
-        $a = $x->query( $query );
-
-        $r = array();
-
-        foreach( $a as $i ) if( $i->nodeType == XML_ELEMENT_NODE ) array_push($a,$i);
-        return $r;
-    }*/
 }
 
 ?>
