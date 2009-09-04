@@ -8,7 +8,7 @@ interface ISitemapParser
 
 interface ISitemapGenerator
 {
-    public function generate();
+    public function generate( DOMNode & $node );
     public function name();
 }
 
@@ -32,17 +32,30 @@ class DOMSite
 {
     private $m_parser_instance = array();
 
-    private $m_options = array('index' => 'index.xml', 'lang' => 'en', 'doctype' => 'traditional', 'base' => '', 'output' => false, 'debug' => false, 'keyname' => 'q', 'keydelimeter' => '/', 'gluescripts' => false, 'gluestyles' => false, 'logspace' => '&nbsp;&nbsp;');
+    private $m_options = array(
+	'index' => 'index.xml',
+	'lang' => 'en',
+	'doctype' => 'traditional',
+	'base' => '',
+	'output' => false,
+	'debug' => false,
+	'keyname' => 'q',
+	'keydelimeter' =>'/',
+	'gluescripts' => false,
+	'gluestyles' => false,
+	'logspace' => '&nbsp;&nbsp;'
+    );
 
     private $m_meta = array(
-		'generator'	=> 'XML Page Cpntroller'
-	);
+	'generator'	=> 'XML Page Cpntroller'
+    );
 
     private $m_log = array();
 
     private $m_pages = array();
 
     private $m_pagestack = array();
+    private $m_append_body = array();
 
     private $m_template = null;
 
@@ -96,10 +109,7 @@ class DOMSite
     public function addPage( $name, DOMNode & $node )
     {
         if( !$name || !is_string($name) || !strlen($name) )
-		{
-
-            return;
-		}
+	    return;
 
         if( !$node )
             return;
@@ -108,11 +118,85 @@ class DOMSite
         $this->log('Add Page "'. $name . '"');
     }
 
+    public function delPage( $name )
+    {
+	if( key_exists($name,$this->m_pages) )
+	    unset( $this->m_pages[$name] );
+    }
+
     public function parse_recursive( DOMNode & $node )
     {
         $this->m_log_stacksize += 1;
-        foreach ( $node->child() as $item ) $this->parse_node( $item );
-        $this->m_log_stacksize -= 1;
+        
+	foreach ( $node->child() as $item )
+	    $this->parse_node( $item );
+
+	$this->m_log_stacksize -= 1;
+    }
+    
+    private function _parse_first( DOMNode & $node )
+    {
+	$this->m_log_stacksize++;
+
+	if( strtolower($node->name()) == 'generator' )
+	{
+	    $genId =  $node->attr('id');
+
+	    if( SitemapGeneratorFactory::instance()->has($genId) == false )
+	    {
+		$this->log('Generator not exist: "'. $genId .'"');
+		return;
+	    }
+
+	    $generator =& SitemapGeneratorFactory::instance()->get($genId);
+	    $generator->setParent($this);
+
+	    $genresult = $generator->generate( $node );
+
+	    switch( gettype($genresult) )
+	    {
+		case 'object':
+		{
+		    if( $genresult instanceof DOMNode )
+		    {
+			//$this->log( 'Insert generator result '  . gettype($genresult) );
+			$node->parent()->replaceChild( $genresult, $node );
+		    }
+		}
+		break;
+		
+		case 'array':
+		{
+		    //$this->log( 'Generator result '  . gettype($genresult) . ', elements count:' . count($genresult) );
+		    $parent = $node->parent();
+		    $parent->removeChild($node);
+
+		    foreach( $genresult as $i )
+		    {
+			//$this->log( 'Walk item ' . gettype($i) );
+			if( $i instanceof DOMNode )
+			    $parent->appendChild( $i );
+		    }
+			
+		}
+		break;
+		
+		case 'string':
+		{
+		    $parent = $node->parent();
+		    $parent->removeChild( $node );
+		    $newnode = $parent->document()->createTextNode( $genresult );
+		    $parent->appendChild( $newnode );
+		}
+		break;
+	    }
+	    return;
+	}
+
+	foreach ( $node->child() as $item )
+	    $this->_parse_first( $item );
+
+	$this->m_log_stacksize--;
     }
 
     private function mf_make_page( $path )
@@ -149,25 +233,6 @@ class DOMSite
             return;
 
         $nodeName = strtolower( $node->name() );
-        $nodePrefix = strtolower( $node->prefix );
-
-        switch( $nodePrefix )
-        {
-            case 'generator':
-                {
-                    if( SitemapGeneratorFactory::instance()->has( $nodeName ) == false )
-                    {
-                        $this->log('Generator not exist: "'. $nodeName .'"');
-                        return;
-                    }
-
-                    $generator =& SitemapGeneratorFactory::instance()->get( $nodeName );
-                    $generator->setParent($this);
-                    $generator->genetrate($node);
-                }
-            break;
-        }
-        
         
         if( !SitemapParserFactory::instance()->has($nodeName) )
         {
@@ -185,7 +250,7 @@ class DOMSite
 
     private function pf_copy_attachments(XMLPage & $page )
     {
-        if (!$page )
+        if ( !$page )
         {
             return;
         }
@@ -264,6 +329,52 @@ class DOMSite
 	    $this->m_log = array_merge( $this->m_log, $page->_log );
     }
 
+    private function _selectPageByPath( $path )
+    {
+	if( is_null($path) || $path == '' )
+	{
+	    $this->log('Default page', 1);
+
+            if ( array_key_exists("page_index", $this->m_pages) )
+            {
+                return $this->m_pages[ "page_index" ];
+            }
+
+	    $this->log('page_index undefined', 2);
+	    return null;
+	}
+
+	if( !is_string($path) )
+	{
+	    $this->log('Invalid page path', 1);
+	    return null;
+	}
+
+	if ( array_key_exists($path, $this->m_pages) )
+	{
+	    $this->log('Page found', 1);
+	    return $this->m_pages[$path];
+	}
+
+	$this->log('Page "'.$path.' is not exist"', 1);
+
+	if ( array_key_exists("page_not_found", $this->m_pages) )
+	{
+	    return $this->m_pages[ "page_not_found" ];
+	}
+
+	$this->log('Page "page_not_found" is undefined', 2);
+	
+	return null;
+
+
+    }
+
+    public function appendToBody( $content )
+    {
+	array_push( $this->m_append_body, $content );
+    }
+
     public function out()
     {
         $this->m_dom_main = new DOMDocument('1.0', 'UTF-8');
@@ -282,66 +393,28 @@ class DOMSite
             return;
         }
 
-        $bm = ~LIBXML_NOWARNING | ~LIBXML_NSCLEAN;
+        $bm = ~LIBXML_NSCLEAN;
         if( $dom->load( $indexfile, $bm/*~LIBXML_NSCLEAN  LIBXML_NOWARNING*/  ) == false )
         {
             $this->log('Parse index failed');
             return;
 
         } else $this->log('Parse index: "'.$this->m_options['index'].'"' );
-        
-        $this->parse_node( $dom->documentElement );
+
+	$this->_parse_first($dom->documentElement);
+        $this->parse_recursive( $dom->documentElement );
         $kname = &$this->m_options['keyname'];
 
-        if (!$kname )
+        if ( !$kname )
         {
             $this->log('Invalid Keyname');
             return;
         }
 
-        $page = null;
+        $page = $this->_selectPageByPath( isset( $_GET['q'] ) ? $_GET['q'] : null );
+	$this->log( 'Request page: ' . $_GET['q'] );
 
-        if ( array_key_exists($kname, $_GET) )
-        {
-            $kval = &$_GET[ $kname ];
-            $this->log('Request page: ' . $kval );
-
-            if (array_key_exists($kval, $this->m_pages) )
-            {
-                $this->log('Page found', 1);
-                $page = &$this->m_pages[ $kval ];
-            }
-            else
-            {
-                $this->log('Page "'.$kval.' is not exist"', 1);
-
-                if ( array_key_exists("page_not_found", $this->m_pages) )
-                {
-                    $page = &$this->m_pages[ "page_not_found" ];
-                }
-                else
-                {
-                    $this->log('Page "page_not_found" is undefined', 2);
-                    return;
-                }
-            }
-        }
-        else
-        {
-            $this->log('Default page');
-
-            if (array_key_exists("page_index", $this->m_pages) )
-            {
-                $page = &$this->m_pages[ "page_index" ];
-            }
-            else
-            {
-                $this->log('page_index undefined', 2);
-            }
-        }
-
-
-        if (!$page )
+        if ( !$page )
         {
             $this->log('No page for output');
             return;
@@ -375,11 +448,11 @@ class DOMSite
             foreach ( $page_->outdata as $key => $val )
             {
 
-            $k = $page_->defaultTempate[0] . $key . $page_->defaultTempate[1];
+		$k = $page_->defaultTempate[0] . $key . $page_->defaultTempate[1];
 
-            $this->log( 'Try apply: ' . $k );
+		$this->log( 'Try apply: ' . $k );
 
-            $body = str_ireplace($k, $val, $body);
+		$body = str_ireplace($k, $val, $body);
 
             }
         }
@@ -419,9 +492,6 @@ class DOMSite
             return;
         }
 
-        
-        
-
         $html->setTitle('Hello title');
 
         $contentType = $html->createElement('meta');
@@ -453,66 +523,54 @@ class DOMSite
                 $this->log('Failed to append style: ' . $s);
         }
 
-        if (strlen($inlinestyle) )
+        if( strlen($inlinestyle) )
         {
             if( $html->addStyle($inlinestyle) == false )
                 $this->log('Failed to append inline style');
         }
 
-        $bn = new DOMDocument('1.0', 'UTF-8');
+	if( strlen($_body) )
+	{
+	    $bn = new DOMDocument('1.0', 'UTF-8');
+	    $bn->loadXML( $body );
 
-        //echo $body;
+	    $_body = $html->getElementsByTagName('body')->item(0);
+	    if( $_body == null )
+	    {
+		$this->log('Cant find body');
+		return;
+	    }
 
-        $bn->loadHTML( $body );
-       
-        //$fr = $html->createTextNode( $body );
+	    foreach ( $bn->childNodes as $no)
+	    {
+		if( $no->nodeType != XML_ELEMENT_NODE )
+		    continue;
 
-        
-        //ob_start();
-        //$fr->appendXML( utf8_encode("<b>Hello&nbsp;fragment</b>") );
-        //ob_end_clean();
+		$n = $html->importNode($no, true);
 
-        $_body = $head = $html->getElementsByTagName('body')->item(0);
-        if( $_body == null )
+		if( !$n )
+		    continue;
+
+		$_body->appendChild( $n );
+	    }
+	}
+ 
+        foreach( $this->m_scripts['include'] as $s )
         {
-            $this->log('Cant find body');
-            return;
+	    $html->addScriptFile($s);
         }
 
-        
-        foreach ( $bn->childNodes as $no)
+        if ( strlen( $inlinescript ) )
         {
-            if( $no->nodeType != XML_ELEMENT_NODE ) continue;
-            $n = $html->importNode($no, true);
-            if( !$n ) continue;
-            $_body->appendChild( $n );
+	    $html->addScript( $inlinescript );
         }
 
-
-
-        //echo $body;
-
-        foreach ($this->m_scripts['include'] as $s )
-        {
-            $tag = $html->createElement('script');
-            $tag->attr('type', 'text/javascript');
-            $tag->attr('src', $s);
-            $_body->appendChild( $tag );
-            unset($tag);
-        }
-
-
-        if (strlen($inlinescript) )
-        {
-            $tag = $html->createElement('script');
-            $tag->attr('type', 'text/javascript');
-            $tag->data( $inlinescript );
-            $_body->appendChild( $tag );
-            unset($tag);
-        }
-
-
-        $html->normalizeDocument();
+	foreach( $this->m_append_body as $content )
+	{
+	    $contentNode = $html->createTextNode($content);
+	    $_body->appendChild( $contentNode );
+	}
+        //html->normalizeDocument();
         return $doctype . $html->saveHTML();
     }
 
