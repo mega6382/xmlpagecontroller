@@ -1,111 +1,32 @@
 <?php
 
-require_once dirname(__FILE__).'/DOMSimpler.php';
-
 interface ISitemapParser
 {
     public function parse( DOMNode & $node );
     public function name();
 }
 
-abstract class SitemapParser implements ISitemapParser
+interface ISitemapGenerator
 {
-    protected $instance = null;
-    public final function setInstance( DOMSite & $instance ){ $this->instance = $instance; }
+    public function generate();
+    public function name();
 }
 
-class theRecursionParser extends SitemapParser
+abstract class NodeProcessor
 {
-    function name()
-    {
-        return 'site root config conf metas options';
-    }
+    protected $parent = null;
+    protected $node = null;
 
-    function parse( DOMNode & $node )
-    {
-        $this->instance->parse_recursive($node);
-    }
+    public final function setParent( DOMSite & $parent ){ $this->parent = $parent; }
+    public final function setNode( DOMNode & $node ){ $this->node = $node; }
 }
 
+abstract class SitemapParser extends NodeProcessor implements ISitemapParser{}
+abstract class SitemapGenerator extends NodeProcessor implements ISitemapGenerator{}
 
-class theOptionParser extends SitemapParser
-{
-    function name()
-    {
-        return 'option';
-    }
-
-    function parse( DOMNode & $node )
-    {
-        $this->instance->addOption( $node->attr('name'), $node->data() );
-    }
-}
-
-class theOptionsParser extends SitemapParser
-{
-    function name()
-    {
-        return 'options';
-    }
-
-    function parse( DOMNode & $node )
-    {
-        foreach( $node->child() as $n )
-            $this->instance->addOption( $n->name(), $n->data() );
-    }
-}
-
-class theMetasParser extends SitemapParser
-{
-    function name()
-    {
-        return 'metas';
-    }
-
-    function parse( DOMNode & $node )
-    {
-        foreach( $node->child() as $n )
-            $this->instance->addMeta( $n->name(), $n->data() );
-    }
-}
-
-class theMetaParser extends SitemapParser
-{
-    function name()
-    {
-        return 'meta';
-    }
-
-    function parse( DOMNode & $node )
-    {
-        $this->instance->addMeta( $node->attr('name'), $node->data() );
-    }
-}
-
-class thePageParser extends SitemapParser
-{
-    var $stack = array();
-
-    function name(){ return 'page'; }
-
-    function parse( DOMNode & $node )
-    {
-	$id = $node->find_value('id');
-        array_push($this->stack, $id );
-        $path = implode('/', $this->stack );
-        //$this->log('Page: '. $path);
-        $this->instance->parse_recursive($node);
-        $this->instance->addPage( $path, $node );
-        array_pop($this->stack);
-    }
-}
-
-class DOMPage
-{
-    public function __construct()
-    {
-    }
-}
+require_once dirname(__FILE__) . '/SiteParserFactory.php';
+require_once dirname(__FILE__) . '/SiteGeneratorFactory.php';
+require_once dirname(__FILE__) . '/DOMSimpler.php';
 
 class DOMSite
 {
@@ -225,117 +146,41 @@ class DOMSite
     public function parse_node( DOMNode & $node )
     {
         if (!$node )
-        {
             return;
-        }
 
-        $nodeName = $node->name();
+        $nodeName = strtolower( $node->name() );
+        $nodePrefix = strtolower( $node->prefix );
 
-        //print_r($this->m_parser_instance);
-
-        //echo $nodeName . '<br />';
-        if( key_exists( strtolower($nodeName), $this->m_parser_instance ) == false )
+        switch( $nodePrefix )
         {
-            $this->log('Sitemap parser not exist: "'. strtolower($nodeName) .'"');
-            return;
-        }
+            case 'generator':
+                {
+                    if( SitemapGeneratorFactory::instance()->has( $nodeName ) == false )
+                    {
+                        $this->log('Generator not exist: "'. $nodeName .'"');
+                        return;
+                    }
 
-        $parser =& $this->m_parser_instance[ strtolower($nodeName) ];
+                    $generator =& SitemapGeneratorFactory::instance()->get( $nodeName );
+                    $generator->setParent($this);
+                    $generator->genetrate($node);
+                }
+            break;
+        }
         
+        
+        if( !SitemapParserFactory::instance()->has($nodeName) )
+        {
+            $this->log('Parser not exist: "'. $nodeName .'"');
+            return;
+        }
+
+        $parser =& SitemapParserFactory::instance()->get( $nodeName );
+        $parser->setParent( $this );        
         $parser->parse($node);  
 
         return;
-
-        $attrName = $node->attr('name');
-
-        switch ($nodeName )
-        {
-            case 'conf':
-            case 'config':
-                {
-                    $this->log('Config');
-
-                    foreach( $node->child() as $item )
-                    {
-                        switch ( $item->nodeName )
-                        {
-                            case 'option':
-                                {
- 
-
-                                    $this->m_pagedefaults[ $item->attr('name') ] = $item->data();
-                                    $this->log('Option "'.$item->attr('name').'": '.$item->data(), 1);
-                                }
-
-                                break;
-                            case 'meta':
-                                {
-                                    $this->m_meta[ $item->attr('name') ] = $item->data();
-                                    $this->log('Meta "'.$item->attr('name').'": '.$item->data(), 1);
-                                }
-
-                                break;
-                            case 'metas':
-                                {
-
-                                    foreach ( $item->child() as $i )
-                                    {
-                                        $this->m_meta[ $i->name() ] = $i->data();
-                                        $this->log('Meta "'.$i->name().'": '.$i->data(), 1);
-                                    }
-                                }
-
-                                break;
-                            case 'options':
-                                {
-
-                                    foreach ( $item->child() as $i )
-                                    {
-                                        $this->m_pagedefaults[ $i->name() ] = $i->data();
-                                        $this->log('Option "'. $i->name() . '": '.$i->data(), 1);
-                                    }
-                                }
-
-                                break;
-                        }
-                    }
-                }
-
-                break;
-            case 'template':
-                {
-                    $this->log('Tempate is: ' . $node->data());
-                    $this->m_template = $node->data();//$this->log('Template '. ( $this->m_template ) ? 'is' : 'no' .' loaded ', 1);
-                }
-
-                break;
-            case 'base':
-                {
-                    $p = $node->data();
-
-                    if (is_string($p) && strlen($p) )
-                    {
-                        $this->m_options['base'] = $p;
-                    }
-                }
-
-                break;
-            case 'page':
-                {
-                    $path = "";
-                    array_push($this->m_pagestack, $node->attr('id') );
-
-                    $path = implode('/', $this->m_pagestack );
-
-                    $this->log('Page: '. $path);
-                    $this->mf_parse_recursive($node);
-                    $this->m_pages[$path] = $node;
-                    
-                    array_pop($this->m_pagestack);
-                }
-
-                break;
-        }
+        
     }
 
     private function pf_copy_attachments(XMLPage & $page )
@@ -421,32 +266,10 @@ class DOMSite
 
     public function out()
     {
-        foreach( get_declared_classes() as $decl )
-        {
-            if( !is_subclass_of($decl, 'SitemapParser') ) continue;
-            
-            $instance = new $decl();
-            $declname = $instance->name();
-
-            if( !$declname || !is_string($declname) || !strlen($declname) || $declname == 'undefined_parser' )
-                continue;
-
-            $instance->setInstance($this);
-            $keys = explode( ' ', $declname );
-
-            foreach( $keys as $k )
-            {
-                $k = trim($k);
-
-                if( !$k  ) continue;
-
-                $this->m_parser_instance[ $k ] = $instance;
-            }
-            //$this->log( 'Register "'. implode(', ',$keys) .'" in '.$decl.' class' );
-        }
-
-        $this->m_dom_main = new DOMDocument();
+        $this->m_dom_main = new DOMDocument('1.0', 'UTF-8');
         $dom =& $this->m_dom_main;
+
+        //echo $dom->resolveExternals;// = true;
 
         $dom->registerNodeClass('DOMElement','DOMElementSimpler');
         $dom->registerNodeClass('DOMDocument','DOMDocumentSimpler');
@@ -459,7 +282,8 @@ class DOMSite
             return;
         }
 
-        if( $dom->load( $indexfile ) == false )
+        $bm = ~LIBXML_NOWARNING | ~LIBXML_NSCLEAN;
+        if( $dom->load( $indexfile, $bm/*~LIBXML_NSCLEAN  LIBXML_NOWARNING*/  ) == false )
         {
             $this->log('Parse index failed');
             return;
@@ -523,33 +347,9 @@ class DOMSite
             return;
         }
 
-        $html = new DOMDocumentSimpler();//DOMDocument();
-
-        $html->registerNodeClass('DOMElement','DOMElementSimpler');
-        $html->registerNodeClass('DOMDocument','DOMDocumentSimpler');
-
-        if( $html->loadXML( '<html><head /><body /></html>') )
-        {
-
-        }
-        else
-        {
-            $this->log("Failed to load case page" );
-            return;
-        }
-
-	
-       /* $containerFile = $this->m_options['base'].$this->m_options['template'];
-	if( file_exists($containerFile) == false )
-	{
-            $this->log( 'Container not exist: ' . $containerFile );
-            return;
-	}
-*/
-
         $cont_ = $this->mf_make_page( $this->m_options['template'] );
         
-		$body = " ";
+        $body = " ";
         if ( $cont_ )
         {
             $this->log( 'Container: ' . $this->m_options['template'] );
@@ -563,8 +363,6 @@ class DOMSite
             return;
         }
 
-        
-
         $page_ = $this->mf_make_page( $page->attr('id') . '.xml' );
 
         if ($page_ )
@@ -572,18 +370,18 @@ class DOMSite
             $page_->out(false);
             $this->pf_copy_attachments($page_);
 
-	    $arr = array();
+            $arr = array();
 
-	    foreach ( $page_->outdata as $key => $val )
-	    {
+            foreach ( $page_->outdata as $key => $val )
+            {
 
-		$k = $page_->defaultTempate[0] . $key . $page_->defaultTempate[1];
+            $k = $page_->defaultTempate[0] . $key . $page_->defaultTempate[1];
 
-		$this->log( 'Try apply: ' . $k );
+            $this->log( 'Try apply: ' . $k );
 
-		$body = str_ireplace($k, $val, $body);
+            $body = str_ireplace($k, $val, $body);
 
-	    }
+            }
         }
         else
         {
@@ -595,25 +393,45 @@ class DOMSite
 
         $head = null;
 
-        foreach( $html->xpath('//html/head') as $i ) $head = $i;
+        $this->m_dom_body = new DOMDocumentSimpler('1.0', 'UTF-8');
+
+        $html =& $this->m_dom_body;
+        $html->registerNodeClass('DOMElement','DOMElementSimpler');
+        $html->registerNodeClass('DOMDocument','DOMDocumentSimpler');
+
+
+        //echo 'Html encoding: ' . $html->encoding;
+
+        if( $html->loadXML( '<html><head /><body /></html>') )
+        {
+
+        }
+        else
+        {
+            $this->log("Failed to load case page" );
+            return;
+        }
+
+        $head = $html->getElementsByTagName('head')->item(0);
         if( is_null($head) )
         {
             $this->log("Failed to get head");
             return;
         }
 
-        $_body = $head->nextSibling;
-
+        
+        
 
         $html->setTitle('Hello title');
 
+        $contentType = $html->createElement('meta');
+        $contentType->attr('http-equiv','Content-Type');
+        $contentType->attr('content','text/html; charset=utf-8');
+        $head->appendChild( $contentType );
+
         foreach ($this->m_meta as $key => $val )
         {
-            $tag = $html->createElement('meta');
-            $tag->attr('name', $key);
-            $tag->attr('content', $val);
-            $head->appendChild( $tag );
-            unset($tag);
+            $html->addMeta($key,$val);
         }
 
         $inlinescript = "";
@@ -640,10 +458,39 @@ class DOMSite
             if( $html->addStyle($inlinestyle) == false )
                 $this->log('Failed to append inline style');
         }
+
+        $bn = new DOMDocument('1.0', 'UTF-8');
+
+        //echo $body;
+
+        $bn->loadHTML( $body );
+       
+        //$fr = $html->createTextNode( $body );
+
         
-        $fr = $html->createDocumentFragment();
-        $fr->appendXML( $container.$body );
-        $_body->appendChild( $fr );
+        //ob_start();
+        //$fr->appendXML( utf8_encode("<b>Hello&nbsp;fragment</b>") );
+        //ob_end_clean();
+
+        $_body = $head = $html->getElementsByTagName('body')->item(0);
+        if( $_body == null )
+        {
+            $this->log('Cant find body');
+            return;
+        }
+
+        
+        foreach ( $bn->childNodes as $no)
+        {
+            if( $no->nodeType != XML_ELEMENT_NODE ) continue;
+            $n = $html->importNode($no, true);
+            if( !$n ) continue;
+            $_body->appendChild( $n );
+        }
+
+
+
+        //echo $body;
 
         foreach ($this->m_scripts['include'] as $s )
         {
