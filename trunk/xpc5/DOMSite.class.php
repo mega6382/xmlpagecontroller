@@ -1,46 +1,18 @@
 <?php
 
-/*
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- */
-
 /**
- * Base class for parsers and generators
- */
-abstract class NodeProcessor
-{
-    /**
-     * Hold DOMSite object instance who call this class
-     */
-    protected $parent   = null;
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
 
-    /**
-     * Hold current node
-     */
-    protected $node     = null;
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+*/
 
-    /**
-     * Set instance of DOMSite object.
-     * @param DOMSite $parent
-     */
-    public final function setParent( DOMSite & $parent )
-    { $this->parent = $parent; }
-
-    /**
-     * Set instance of DOMNode object.
-     * @param DOMNode $node
-     */
-    public final function setNode( DOMNode & $node )
-    { $this->node   = $node; }
-}
+defined( 'XPC_CLASSES' ) or die('defined');
 
 /**
  * Base class for simple object-oriented interface for working with collections
@@ -89,9 +61,59 @@ abstract class DataCollection
     { unset( $this->m_data[$a_key] ); }
 }
 
-require_once dirname(__FILE__) . DIRECTORY_SEPARATOR . 'SiteParserFactory.php';
-require_once dirname(__FILE__) . DIRECTORY_SEPARATOR . 'SiteGeneratorFactory.php';
-require_once dirname(__FILE__) . DIRECTORY_SEPARATOR . 'DOMSimpler.php';
+
+class tagRecursiveParser extends DOMElementParser { function parse(){ $this->doInside(); } }
+class tagOptionParser extends DOMElementParser
+{
+    function parse()
+    {
+        $this->parser()->addOption( $this->attr('name'), $node->data() );
+    }
+}
+
+class tagOptionsParser extends DOMElementParser
+{
+    function parse()
+    {
+        foreach( $this->node()->childNodes as $n )
+            $this->parser()->addOption( $n->nodeName, $n->nodeValue );
+    }
+}
+
+class tagMetasParser extends DOMElementParser
+{
+    function parse()
+    {
+        foreach( $this->node()->childNodes as $n )
+            $this->parser()->addMeta( $n->nodeName, $n->nodeValue );
+    }
+}
+
+class tagMetaParser extends DOMElementParser
+{
+    function parse()
+    {
+        $this->parser()->addMeta( $this->attr('name'), $this->data() );
+    }
+}
+
+class tagPageParser extends DOMElementParser
+{
+    var $stack = array();
+    function parse()
+    {
+        $id = $this->attr('id');
+        if( !$id )
+            return;
+
+        array_push($this->stack, $id );
+        $path = implode('/', $this->stack );
+        $this->doInside();
+        array_pop($this->stack);
+
+        $this->parser()->addPage( $path, $this->node() );
+    }
+}
 
 class PageElement
 {
@@ -129,7 +151,7 @@ class PageElement
  * @filesource DOMSimpler.php
  *
  */
-class DOMSite
+class DOMSite extends DOMParser
 {
     private $m_options = array(
         'index' => 'index.xml',
@@ -171,8 +193,6 @@ class DOMSite
 
     private $m_log_stacksize = 0;
 
-    private $m_xml = null;
-
     private $m_scripts = array('inline' => array(), 'include' => array() );
 
     private $m_styles = array('inline' => array(), 'include' => array() );
@@ -183,6 +203,15 @@ class DOMSite
 
     public function __construct(array $options )
     {
+        $this->registerParsers( array(
+            'root config' => new tagRecursiveParser(),
+            'page' => new tagPageParser(),
+            'options' => new tagOptionsParser(),
+            'option' => new tagOptionParser(),
+            'metas' => new tagMetasParser(),
+            'meta' => new tagMetaParser()
+        ));
+
         $this->m_options = array_merge($this->m_options, $options );//print_r( $this->m_options );
         if ($this->m_options['output'] == true )
         {
@@ -192,12 +221,10 @@ class DOMSite
 
     public function addOption( $key, $value )
     {
-        if( !$key || !is_string($key) || !strlen($key) )
+        if( empty($key) )
             return;
 
-        if( !$value || !is_string($value) || !strlen($value) )
-            return;
-
+        $this->log('Option "'.$key.'": '.$value);
         $this->m_options[ $key ] = $value;
     }
 
@@ -214,23 +241,22 @@ class DOMSite
 
     public function addPage( $path, DOMNode & $node )
     {
-        if( !$path || !is_string($path) || !strlen($path) )
+        if( empty($path ) )
             return;
 
         if( !$node )
             return;
-
         $p              = new PageElement();
-        $p->id          = $node->attr('id');
+        $p->id          = $node->getAttribute('id');
         $p->path        = $path;
         $p->lang        = $this->m_options['lang'];
         $p->file        = str_replace('/', '-', $path).'.xml';
-        $p->role        = $node->attr('role');
+        $p->role        = $node->getAttribute('role');
         $p->node        = $node;
         $p->type        = 'page';
-        $p->title       = $node->attr('title');
+        $p->title       = $node->getAttribute('title');
         $p->fullpath    = $this->m_options['base'] . $p->file;
-        $p->alias       = $node->attr('alias');
+        $p->alias       = $node->getAttribute('alias');
 
         $this->m_pages[$path] = $p;
 
@@ -242,89 +268,12 @@ class DOMSite
         if( key_exists($name,$this->m_pages) )
             unset( $this->m_pages[$name] );
     }
-
-    public function parse_recursive( DOMNode & $node )
-    {
-        $this->m_log_stacksize += 1;
-
-        foreach ( $node->child() as $item )
-            $this->parse_node( $item );
-
-        $this->m_log_stacksize -= 1;
-    }
     
-    private function _parse_first( DOMNode & $node )
-    {
-        $this->m_log_stacksize++;
-
-        if( strtolower($node->name()) == 'generator' )
-        {
-            $genId =  $node->attr('id');
-
-            if( SitemapGeneratorFactory::instance()->has($genId) == false )
-            {
-                $this->log('Generator not exist: "'. $genId .'"');
-                return;
-            }
-
-            $generator =& SitemapGeneratorFactory::instance()->get($genId);
-            $generator->setParent($this);
-
-            $genresult = $generator->generate( $node );
-
-            switch( gettype($genresult) )
-            {
-                case 'object':
-                {
-                    if( $genresult instanceof DOMNode )
-                    {
-                        //$this->log( 'Insert generator result '  . gettype($genresult) );
-                        $node->parent()->replaceChild( $genresult, $node );
-                    }
-                }
-                break;
-
-                case 'array':
-                {
-                    //$this->log( 'Generator result '  . gettype($genresult) . ', elements count:' . count($genresult) );
-                    $parent = $node->parent();
-                    $parent->removeChild($node);
-
-                    foreach( $genresult as $i )
-                    {
-                        //$this->log( 'Walk item ' . gettype($i) );
-                        if( $i instanceof DOMNode )
-                            $parent->appendChild( $i );
-                    }
-
-                }
-                break;
-
-                case 'string':
-                {
-                    $parent = $node->parent();
-                    $parent->removeChild( $node );
-                    $newnode = $parent->document()->createTextNode( $genresult );
-                    $parent->appendChild( $newnode );
-                }
-                break;
-            }
-            # dfsdfsd
-            // If name == 'generator
-            return;
-        }
-
-        foreach ( $node->child() as $item )
-            $this->_parse_first($item);
-
-        $this->m_log_stacksize--;
-    }
-
     private function mf_make_page( $filepath )
     {
         $this->log("Make page" );
 
-        if (!$filepath || !is_string($filepath) || !strlen($filepath) )
+        if ( empty( $filepath ) )
         {
             $this->log("Bad page path", 1 );
             return null;
@@ -345,26 +294,6 @@ class DOMSite
             'debug' => true
         ));
         return $p_;
-    }
-
-    public function parse_node( DOMNode & $node )
-    {
-        if (!$node )
-            return;
-
-        $nodeName = strtolower( $node->name() );
-        
-        if( !SitemapParserFactory::instance()->has($nodeName) )
-        {
-            $this->log('Parser not exist: "'. $nodeName .'"');
-            return;
-        }
-
-        $parser =& SitemapParserFactory::instance()->get( $nodeName );
-        $parser->setParent( $this );        
-        $parser->parse($node);  
-
-        return;
     }
 
     private function pf_copy_attachments(XMLPage & $page )
@@ -487,6 +416,13 @@ class DOMSite
 
     private function _selectPageByPath( $path )
     {
+        if( empty ( $path ) )
+        {
+            if( key_exists($this->m_options['id_page_index'], $this->m_pages) )
+                return $this->m_pages[ $this->m_options['id_page_index'] ];
+            else
+                return $this->m_pages[ $this->m_options['id_page_not_found'] ];
+        }
         return ( key_exists($path, $this->m_pages) ) ? $this->m_pages[$path] : null;
     }
 
@@ -511,23 +447,16 @@ class DOMSite
             return;
         }
 
-        $this->m_dom_main = new DOMDocument('1.0', 'UTF-8');
-        $dom =& $this->m_dom_main;
-
-        $dom->registerNodeClass('DOMElement','DOMElementSimpler');
-        $dom->registerNodeClass('DOMDocument','DOMDocumentSimpler');
-
-        if( $dom->load( $indexfile, ~LIBXML_NSCLEAN ) == false )
+        $dom = new DOMDocument();
+        if( !$dom->load( $indexfile ) )
         {
             $this->log('Parse index failed');
             if( $log_out ) echo $this->log_print();
             return;
+        }
+        $this->log('Parse index: "'.$this->m_options['index'].'"' );
 
-        } else $this->log('Parse index: "'.$this->m_options['index'].'"' );
-
-        $this->_parse_first($dom->documentElement);
-        $this->parse_recursive( $dom->documentElement );
-
+        $this->parseDocument($dom);
         
         /**
          * Select page
@@ -649,7 +578,7 @@ class DOMSite
         $html->registerNodeClass('DOMElement','DOMElementSimpler');
         $html->registerNodeClass('DOMDocument','DOMDocumentSimpler');
 
-        if( !$html->loadXML( '<html><head /><body /></html>') )
+        if( !$html->loadXML( '<html><head /><body><!--[BODY_PLACE]--></body></html>') )
         {
             $this->log("Failed to load case page" );
             if( $log_out ) $this->log_print();
@@ -697,7 +626,7 @@ class DOMSite
                 $this->log('Failed to append inline style');
         }
 
-        if( strlen($body) )
+       /* if( strlen($body) )
         {
             $textFrag = $html->createComment("[BODY_PLACE]");
 
@@ -709,7 +638,7 @@ class DOMSite
                 return;
             }
             $b->appendChild( $textFrag );
-        }
+        }*/
  
         foreach( $this->m_scripts['include'] as $s )
         {
@@ -732,18 +661,18 @@ class DOMSite
             $body .= $this->log_print();
         }
 
-        $ra = array( 'body_place' => &$body );
+        //$ra = array( 'body_place' => &$body );
 
-        $mutator = new DOMMutator();
+        /*$mutator = new DOMMutator();
 
         if( !$mutator->fromDOM($html, $ra) )
         {
              $this->log('Mutation failed');
             if( $log_out ) echo $this->log_print();
             return;
-        }
+        }*/
 
-        //$doc = str_replace('<!--[BODY_PLACE]-->', $body, $html->saveHTML() );
+        $doc = str_replace('<!--[BODY_PLACE]-->', $body, $html->saveHTML() );
 
         $links_arr = array();
         foreach( $this->m_pages as $k => $v )
@@ -753,7 +682,7 @@ class DOMSite
         }
 
        // print_r( $this->m_locales );
-        $doc = Template::apply( $html->saveHTML(), $links_arr, array("{link:","}") );
+        $doc = Template::apply( $doc, $links_arr, array("{link:","}") );
         $doc = Template::apply( $doc, $this->m_locales, array("{l:","}") );
 
         return $doctype . $doc;

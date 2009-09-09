@@ -1,24 +1,34 @@
 <?php
-/* 
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 
 /**
- * Description of DOMBase
- *
- * @author Zombie!
- */
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
 
-class DOMBase
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+*/
+
+defined( 'XPC_CLASSES' ) or die('defined');
+
+class DOMLoader
 {
-    private $m_dom = null;
+    protected $m_dom = null;
 
-    public function __construct() {
+    protected final function dom()
+    {
+        return $this->m_dom;
+    }
+
+    public function __construct()
+    {
 
     }
 
-    public function fromString( $a_string )
+    public final function fromString( $a_string )
     {
         if( empty($a_string) )
             return;
@@ -29,7 +39,7 @@ class DOMBase
             return $this->fromDOM( $d );
     }
 
-    public function fromFile( $a_filename )
+    public final function fromFile( $a_filename )
     {
         if( empty($a_filename) )
             return;
@@ -43,11 +53,15 @@ class DOMBase
             return $this->fromDOM( $d );
     }
 
-    public function fromDOM( DOMDocument & $a_dom )
+    public final function fromDOM( DOMDocument & $a_dom )
     {
+        if( $this->m_dom )
+            unset( $this->m_dom );
+
         if( !$a_dom )
             return false;
 
+        $this->m_dom = $a_dom;
         return true;
     }
 }

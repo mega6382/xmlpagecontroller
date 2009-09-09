@@ -1,4 +1,5 @@
 <?php
+
 /**
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -10,6 +11,8 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 */
+
+defined( 'XPC_CLASSES' ) or die('defined');
 
 /**
  * XMLTag class (php5)
