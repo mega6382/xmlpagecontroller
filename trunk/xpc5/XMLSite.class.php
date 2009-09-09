@@ -4,19 +4,20 @@
 * and open the template in the editor.
 */
 
-class XMLSite {
+class XMLSite
+{
     private $m_options = array(
-    'index'         => 'index.xml',
-    'lang'          => 'en',
-    'doctype'       => 'traditional',
-    'base'          => '',
-    'output'        => false,
-    'debug'         => false,
-    'keyname'       => 'q',
-    'keydelimeter'  => '/',
-    'gluescripts'   => false,
-    'gluestyles'    => false,
-    'logspace'      => '&nbsp;&nbsp;'
+        'index'         => 'index.xml',
+        'lang'          => 'en',
+        'doctype'       => 'traditional',
+        'base'          => '',
+        'output'        => false,
+        'debug'         => false,
+        'keyname'       => 'q',
+        'keydelimeter'  => '/',
+        'gluescripts'   => false,
+        'gluestyles'    => false,
+        'logspace'      => '&nbsp;&nbsp;'
     );
 
     private $m_meta = array();
@@ -86,37 +87,47 @@ class XMLSite {
         $nodeName = $node->name();
         $attrName = $node->attr('name');
 
-        switch ($nodeName ) {
-            case 'config': {
+        switch ($nodeName )
+        {
+            case 'config':
+                {
                     $this->log('Config');
 
-                    foreach ($node->children() as $item ) {
+                    foreach ($node->children() as $item )
+                    {
 
-                        switch ($item->name() ) {
-                            case 'option': {
+                        switch ($item->name() )
+                        {
+                            case 'option':
+                                {
                                     $this->m_pagedefaults[ $item->attr('name') ] = $item->data();
                                     $this->log('Option "'.$item->attr('name').'": '.$item->data(), 1);
                                 }
 
                                 break;
-                            case 'meta': {
+                            case 'meta':
+                                {
                                     $this->m_meta[ $item->attr('name') ] = $item->data();
                                     $this->log('Meta "'.$item->attr('name').'": '.$item->data(), 1);
                                 }
 
                                 break;
-                            case 'metas': {
+                            case 'metas':
+                                {
 
-                                    foreach ($item->children() as $opt ) {
+                                    foreach ($item->children() as $opt )
+                                    {
                                         $this->m_meta[ $opt->name() ] = $opt->data();
                                         $this->log('Meta "'.$opt->name().'": '.$opt->data(), 1);
                                     }
                                 }
 
                                 break;
-                            case 'options': {
+                            case 'options':
+                                {
 
-                                    foreach ($item->children() as $opt ) {
+                                    foreach ($item->children() as $opt )
+                                    {
                                         $this->m_pagedefaults[ $opt->name() ] = $opt->data();
                                         $this->log('Option "'.$opt->name().'": '.$opt->data(), 1);
                                     }
@@ -128,22 +139,28 @@ class XMLSite {
                 }
 
                 break;
-            case 'template': {
+
+            case 'template':
+                {
                     $this->log('Tempate');
                     $this->m_template = $node->data();//$this->log('Template '. ( $this->m_template ) ? 'is' : 'no' .' loaded ', 1);
                 }
 
                 break;
-            case 'base': {
+
+            case 'base':
+                {
                     $p = $node->data();
 
-                    if (is_string($p) && strlen($p) ) {
+                    if (is_string($p) && strlen($p) )
+                    {
                         $this->m_options['base'] = $p;
                     }
                 }
 
                 break;
-            case 'page': {
+            case 'page':
+                {
                     $path = "";
                     array_push($this->m_pagestack, $node->attr('name') );
                     $path = implode('/', $this->m_pagestack );
@@ -152,84 +169,89 @@ class XMLSite {
                     $this->m_pages[$path] = $node;
                     array_pop($this->m_pagestack );
                 }
-
                 break;
         }
     }
 
-    private function pf_copy_attachments(XMLPage & $page ) {
-        if (!$page ) {
+    private function pf_copy_attachments(XMLPage & $page )
+    {
+        if (!$page )
             return;
-        }
-
-
-        foreach ($page->remote_style as $s ) {
+        
+        foreach ( $page->remote_style as $s )
+        {
             array_push($this->m_styles['include'], $s );
         }
 
-
-        foreach ($page->remote_script as $s ) {
+        foreach ( $page->remote_script as $s )
+        {
             array_push($this->m_scripts['include'], $s );
         }
 
+        if ( $this->m_options['gluestyles'] )
+        {
 
-        if ($this->m_options['gluestyles'] ) {
-
-            foreach ($page->include_style as $s ) {
+            foreach ($page->include_style as $s )
+            {
                 $f = file_get_contents($s);
 
-                if ($f && strlen($f) ) {
+                if ($f && strlen($f) )
+                {
                     array_push($this->m_styles['inline'], "\n/***** include  style *****/\n" . $f );
                 }
             }
         }
-        else {
+        else
+        {
 
-            foreach ($page->include_style as $s ) {
+            foreach ($page->include_style as $s )
+            {
                 array_push($this->m_styles['include'], $s );
             }
         }
 
 
-        if ($this->m_options['gluescripts'] ) {
-
-            foreach ($page->include_script as $s ) {
+        if ($this->m_options['gluescripts'] )
+        {
+            foreach ($page->include_script as $s )
+            {
                 $f = file_get_contents($s);
 
-                if ($f && strlen($f) ) {
+                if ($f && strlen($f) )
+                {
                     array_push($this->m_scripts['inline'], "\n/***** include script *****/\n" . $f );
                 }
             }
         }
-        else {
+        else
+        {
 
-            foreach ($page->include_script as $s ) {
+            foreach ($page->include_script as $s )
+            {
                 array_push($this->m_scripts['include'], $s );
             }
         }
 
 
-        foreach ($page->inline_script as $s ) {
+        foreach ($page->inline_script as $s )
+        {
             array_push($this->m_scripts['inline'], "\n/***** inline script *****/\n" . $s );
         }
 
 
-        foreach ($page->inline_style as $s ) {
+        foreach ($page->inline_style as $s )
+        {
             array_push($this->m_styles['inline'], "\n/***** inline style *****/\n" . $s );
-    }/*
-print_r( $page->include_style );
-print_r( $page->include_script );
-echo "\n\n\n";
-print_r( $this->m_scripts['include'] );
-print_r( $this->m_styles['include'] );
-*/
+        }
     }
 
-    public function out() {
+    public function out()
+    {
         $l_parser = new XMLParser($this->m_options['index'], true );
         $this->m_xml = $l_parser->Parse();
 
-        if (!$this->m_xml ) {
+        if (!$this->m_xml )
+        {
             $this->log('Parse index failed');
             return;
         }
@@ -238,14 +260,16 @@ print_r( $this->m_styles['include'] );
         $this->mf_parse_recursive($this->m_xml );
         $kname = &$this->m_options['keyname'];
 
-        if (!$kname ) {
+        if (!$kname )
+        {
             $this->log('Invalid Keyname');
             return;
         }
 
         $page = null;
 
-        if (array_key_exists($kname, $_GET) ) {
+        if (array_key_exists($kname, $_GET) )
+        {
             $kval = &$_GET[ $kname ];
             $this->log('Request page: ' . $kval );
 
