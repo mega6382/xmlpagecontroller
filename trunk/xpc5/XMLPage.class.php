@@ -408,9 +408,9 @@ else */
 
 		$param_ = $node->attr('param');
 
-		if ($param_ )
+		if ( $param_ )
 		{
-			$params = split(",", $param_ );//print_r( $params );
+			$params = explode(",", $param_ );//print_r( $params );
 			$results = array();
 
 			foreach ($params as $pkey => $param )
@@ -418,7 +418,7 @@ else */
 				$var = "";
 				$con = "";
 				$val = "";
-				$arr = split(' ', $param );
+				$arr = explode(' ', $param );
 
 				if (count($arr) < 3 )
 				{
@@ -837,9 +837,11 @@ else */
 		}
 
 		$this->node = $node;
+
 		$name = $node->name();
 		$attr = $node->attr();
 		$data = $node->data();
+
 		$attrName = ( isset($attr['name']) ) ? $attr['name'] : null;
 		$attrType = ( isset($attr['type']) ) ? $attr['type'] : null;
 		$attrLang = ( isset($attr['lang']) ) ? $attr['lang'] : null;
@@ -1363,8 +1365,9 @@ $this->tempnode = '';
 			}
 
 			break;
-		case 'var':
-			$this->addVar($attrName, $this->parseValue($node) );
+        
+            case 'var':
+                $this->addVar($attrName, $this->parseValue($node) );
 			break;/*case 'vars':
 case 'values':
 {
