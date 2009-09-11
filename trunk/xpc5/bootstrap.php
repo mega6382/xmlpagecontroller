@@ -1,6 +1,6 @@
 <?php
 
-/**
+/*
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation; either version 2 of the License, or
@@ -28,10 +28,11 @@
     require XPC_CLASS_SYSTEM_PATH . 'XMLPage.class.php';
     require XPC_CLASS_SYSTEM_PATH . 'XMLSite.class.php';
     require XPC_CLASS_SYSTEM_PATH . 'DOMSimpler.php';
-    require XPC_CLASS_SYSTEM_PATH . 'DOMBase.class.php';
     require XPC_CLASS_SYSTEM_PATH . 'DOMMutator.class.php';
     require XPC_CLASS_SYSTEM_PATH . 'DOMParser.class.php';
     require XPC_CLASS_SYSTEM_PATH . 'DOMDataBase.class.php';
+    require XPC_CLASS_SYSTEM_PATH . 'DOMPart.class.php';
+    require XPC_CLASS_SYSTEM_PATH . 'HTMLPart.class.php';
     require XPC_CLASS_SYSTEM_PATH . 'DOMSite.class.php';
 
 ?>
