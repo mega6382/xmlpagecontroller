@@ -1,6 +1,6 @@
 <?php
 
-/**
+/*
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation; either version 2 of the License, or
@@ -41,10 +41,11 @@ class Template
 
     static public function _doAssign( & $a_template, array & $a_values, array $a_brace, $a_case )
     {
-        if( !$a_values )
+        if( empty($a_values) )
             return $a_template;
-            
-        $l_output = @$a_template;
+
+        $l_output =@ $a_template;
+
         foreach( $a_values as $k => $v )
         {
             switch( gettype($v) )
