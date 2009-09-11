@@ -1,6 +1,6 @@
 <?php
 
-/**
+/*
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation; either version 2 of the License, or
@@ -62,7 +62,7 @@ abstract class DataCollection
 }
 
 
-class tagRecursiveParser extends DOMElementParser { function parse(){ $this->doInside(); } }
+class tagRecursiveParser extends DOMElementParser { function parse(){ parent::doInside(); } }
 class tagOptionParser extends DOMElementParser
 {
     function parse()
@@ -76,7 +76,11 @@ class tagOptionsParser extends DOMElementParser
     function parse()
     {
         foreach( $this->node()->childNodes as $n )
+        {
+            if( $n->nodeType != XML_ELEMENT_NODE ) continue;
             $this->parser()->addOption( $n->nodeName, $n->nodeValue );
+        }
+            
     }
 }
 
@@ -85,7 +89,10 @@ class tagMetasParser extends DOMElementParser
     function parse()
     {
         foreach( $this->node()->childNodes as $n )
+        {
+            if( $n->nodeType != XML_ELEMENT_NODE ) continue;
             $this->parser()->addMeta( $n->nodeName, $n->nodeValue );
+        }
     }
 }
 
@@ -108,7 +115,7 @@ class tagPageParser extends DOMElementParser
 
         array_push($this->stack, $id );
         $path = implode('/', $this->stack );
-        $this->doInside();
+        parent::doInside();
         array_pop($this->stack);
 
         $this->parser()->addPage( $path, $this->node() );
@@ -281,34 +288,23 @@ class DOMSite extends DOMParser
 
         $this->log("Page path: ". $filepath, 1 );
 
-        if ( !is_file($filepath) )
-        {
-            $this->log("Not found", 2);
-            return null;
-        }
-
-        $p_ = new XMLPage( array(
-            'index' => $filepath,
-            'lang' => $this->m_options['lang'],
-            'templateTag' => array('{', '}', 'CONTENT'),
-            'debug' => true
-        ));
-        return $p_;
+        $p = new HTMLPart();
+        if( $p->fromFile($filepath) ) return $p;
     }
 
-    private function pf_copy_attachments(XMLPage & $page )
+    private function pf_copy_attachments( HTMLPart & $page )
     {
         if ( !$page )
         {
             return;
         }
 
-        foreach ($page->remote_style as $s )
+        foreach ($page->m_style_remote as $s )
         {
             array_push($this->m_styles['include'], $s );
         }
 
-        foreach ($page->remote_script as $s )
+        foreach ($page->m_script_remote as $s )
         {
             array_push($this->m_scripts['include'], $s );
         }
@@ -316,7 +312,7 @@ class DOMSite extends DOMParser
         if ($this->m_options['gluestyles'] )
         {
 
-            foreach ($page->include_style as $s )
+            foreach ($page->m_style_include as $s )
             {
                 $f = file_get_contents($s);
 
@@ -329,7 +325,7 @@ class DOMSite extends DOMParser
         else
         {
 
-            foreach ($page->include_style as $s )
+            foreach ($page->m_style_include as $s )
             {
                 array_push($this->m_styles['include'], $s );
             }
@@ -338,7 +334,7 @@ class DOMSite extends DOMParser
         if ($this->m_options['gluescripts'] )
         {
 
-            foreach ($page->include_script as $s )
+            foreach ($page->m_script_include as $s )
             {
                 $f = file_get_contents($s);
 
@@ -351,18 +347,18 @@ class DOMSite extends DOMParser
         else
         {
 
-            foreach ($page->include_script as $s )
+            foreach ($page->m_script_include as $s )
             {
                 array_push($this->m_scripts['include'], $s );
             }
         }
 
-        foreach ($page->inline_script as $s )
+        foreach ($page->m_script_inline as $s )
         {
             array_push($this->m_scripts['inline'], "\n/***** inline script *****/\n" . $s );
         }
 
-        foreach ($page->inline_style as $s )
+        foreach ($page->m_style_inline as $s )
         {
             array_push($this->m_styles['inline'], "\n/***** inline style *****/\n" . $s );
         }
@@ -440,24 +436,15 @@ class DOMSite extends DOMParser
          */
         $indexfile = $this->m_options['index'];
 
-        if( file_exists($indexfile) == false )
+     
+        if( !$this->fromFile($indexfile) )
         {
-            $this->log('Index file not exist');
-            if( $log_out ) echo $this->print_log();
-            return;
-        }
-
-        $dom = new DOMDocument();
-        if( !$dom->load( $indexfile ) )
-        {
-            $this->log('Parse index failed');
+            $this->log('Parse index failed: ' . $indexfile);
             if( $log_out ) echo $this->log_print();
             return;
         }
         $this->log('Parse index: "'.$this->m_options['index'].'"' );
 
-        $this->parseDocument($dom);
-        
         /**
          * Select page
          */
@@ -516,12 +503,10 @@ class DOMSite extends DOMParser
             }
         }
 
-
-
         /**
          * Make template
          */
-        $body = " ";
+        $body = '${CONTENT}';
         if( key_exists('template', $this->m_options) )
         {
             $cont_ = $this->mf_make_page( $this->m_options['base'] . $this->m_options['template'] );
@@ -529,7 +514,7 @@ class DOMSite extends DOMParser
             {
                 $this->log( 'Container: ' . $this->m_options['template'] );
 
-                $body = $cont_->out(false);
+                $body = $cont_->getContent();
                 $this->pf_copy_attachments($cont_);
             }
             else
@@ -539,7 +524,8 @@ class DOMSite extends DOMParser
                 return;
             }
         }
-        else $body = '{CONTENT}';
+
+        //echo $body;
 
         /**
          * Make page
@@ -548,14 +534,14 @@ class DOMSite extends DOMParser
 
         if ($page_ )
         {
-            $page_->out(false);
+            $page_->getContent();
             $this->pf_copy_attachments($page_);
 
             $arr = array();
 
-            foreach ( $page_->outdata as $key => $val )
+            foreach ( $page_->m_echo as $key => $val )
             {
-                $k = $page_->defaultTempate[0] . $key . $page_->defaultTempate[1];
+                $k = '${' . $key . '}';
                 $this->log( 'Try apply: ' . $k );
                 $body = str_ireplace($k, $val, $body);
             }
@@ -626,20 +612,6 @@ class DOMSite extends DOMParser
                 $this->log('Failed to append inline style');
         }
 
-       /* if( strlen($body) )
-        {
-            $textFrag = $html->createComment("[BODY_PLACE]");
-
-            $b = $html->body();
-            if( !$b )
-            {
-                $this->log('Cant find body');
-                if( $log_out ) echo $this->log_print();
-                return;
-            }
-            $b->appendChild( $textFrag );
-        }*/
- 
         foreach( $this->m_scripts['include'] as $s )
         {
             $html->addScriptFile($s);
@@ -682,8 +654,8 @@ class DOMSite extends DOMParser
         }
 
        // print_r( $this->m_locales );
-        $doc = Template::apply( $doc, $links_arr, array("{link:","}") );
-        $doc = Template::apply( $doc, $this->m_locales, array("{l:","}") );
+        $doc = Template::apply( $doc, $links_arr, array('${link:',"}") );
+        $doc = Template::apply( $doc, $this->m_locales, array('${l:',"}") );
 
         return $doctype . $doc;
     }
