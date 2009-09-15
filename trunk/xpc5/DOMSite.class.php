@@ -62,63 +62,53 @@ abstract class DataCollection
 }
 
 
-class tagRecursiveParser extends DOMElementParser { function parse(){ parent::doInside(); } }
-class tagOptionParser extends DOMElementParser
+class DOMSitemapParser extends DOMElementParser
 {
-    function parse()
+    public function recursive()
     {
-        $this->parser()->addOption( $this->attr('name'), $node->data() );
+        parent::doInside();
     }
-}
 
-class tagOptionsParser extends DOMElementParser
-{
-    function parse()
+    public function option()
     {
-        foreach( $this->node()->childNodes as $n )
-        {
-            if( $n->nodeType != XML_ELEMENT_NODE ) continue;
-            $this->parser()->addOption( $n->nodeName, $n->nodeValue );
-        }
-            
+        $this->parser()->addOption( $this->attr('name'), parent::text() );
     }
-}
-
-class tagMetasParser extends DOMElementParser
-{
-    function parse()
+    
+    public function options()
     {
-        foreach( $this->node()->childNodes as $n )
+        foreach( parent::child() as $c )
         {
-            if( $n->nodeType != XML_ELEMENT_NODE ) continue;
-            $this->parser()->addMeta( $n->nodeName, $n->nodeValue );
+            $this->parser()->addOption( $c->nodeName, $c->textContent );
         }
     }
-}
 
-class tagMetaParser extends DOMElementParser
-{
-    function parse()
+    public function meta()
     {
-        $this->parser()->addMeta( $this->attr('name'), $this->data() );
+        $this->parser()->addMeta( $this->attr('name'), parent::text() );
     }
-}
 
-class tagPageParser extends DOMElementParser
-{
-    var $stack = array();
-    function parse()
+    public function metas()
     {
-        $id = $this->attr('id');
+        foreach( parent::child() as $c )
+        {
+            $this->parser()->addMeta( $c->nodeName, $c->textContent );
+        }
+    }
+
+    private $page_stack = array();
+
+    function page()
+    {
+        $id = parent::attr('id');
         if( !$id )
             return;
 
-        array_push($this->stack, $id );
-        $path = implode('/', $this->stack );
+        array_push($this->page_stack, $id );
+        $path = implode('/', $this->page_stack );
         parent::doInside();
-        array_pop($this->stack);
+        array_pop($this->page_stack);
 
-        $this->parser()->addPage( $path, $this->node() );
+        $this->parser()->addPage( $path, parent::node() );
     }
 }
 
@@ -212,13 +202,17 @@ class DOMSite extends DOMParser
 
     public function __construct(array $options )
     {
+        parent::__construct();
+        
+        $p = new DOMSitemapParser();
+
         $this->registerParsers( array(
-            'root config' => new tagRecursiveParser(),
-            'page' => new tagPageParser(),
-            'options' => new tagOptionsParser(),
-            'option' => new tagOptionParser(),
-            'metas' => new tagMetasParser(),
-            'meta' => new tagMetaParser()
+            'root config' => array($p,'recursive'),
+            'page' => array($p,'page'),
+            'options' => array($p,'options'),
+            'option' => array($p,'options'),
+            'metas' => array($p,'metas'),
+            'meta' => array($p,'meta')
         ));
 
         $this->m_rprovider = new RoleProvider();
@@ -228,8 +222,6 @@ class DOMSite extends DOMParser
         {
             echo $this->out();
         }
-
-
     }
 
     public function addOption( $key, $value )
