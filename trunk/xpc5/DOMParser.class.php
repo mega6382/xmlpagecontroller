@@ -33,12 +33,6 @@ class DOMNodeProcessor
 
     public final function setParser( DOMParser & $a_owner )
     { unset( $this->m_owner ); $this->m_owner = $a_owner; }
-}
-
-abstract class DOMElementParser extends DOMNodeProcessor
-{
-    public function __construct()
-    {}
 
     protected final function child()
     {
@@ -82,19 +76,12 @@ abstract class DOMElementParser extends DOMNodeProcessor
         }
         return $result;
     }
+}
 
+abstract class DOMElementParser extends DOMNodeProcessor
+{
     protected function value()
     { return parent::parser()->parseDataType( parent::node() ); }
-
-    public final function doParse( DOMParser & $a_parser, DOMElement & $a_node )
-    {
-        if( !$a_parser || !$a_node )
-            return false;
-
-        $this->setParser($a_parser);
-        $this->setNode($a_node);
-        return $this->parse();
-    }
 
     public final function doInside()
     {
@@ -109,22 +96,11 @@ abstract class DOMElementParser extends DOMNodeProcessor
         $this->setNode($t_node);
         $this->setParser($t_parser);
     }
-
-    abstract protected function parse();
 }
 
 abstract class DOMElementDataParser extends DOMNodeProcessor
 {
-    public final function doParse( DOMParser & $a_parser, DOMElement & $a_node )
-    {
-        if( !$a_parser || !$a_node )
-            return false;
 
-        $this->setParser($a_parser);
-        $this->setNode($a_node);
-        return $this->parse();
-    }
-    abstract protected function parse();
 }
 
 /**
@@ -143,46 +119,19 @@ class DOMParser
         $this->m_dataParsers = array();
     }
 
-    public function registerParser( $a_name, $a_iname )
+    public function registerParser( $a_name, $a_callback )
     {
-        if( empty( $a_name ) )
+        if( empty( $a_name ) || !is_string( $a_name ) )
             return;
 
-        if( empty( $a_iname ) )
-            return;
-
-        if( !in_array( $a_iname, get_declared_classes() ) )
-            return;
-            
-        if( !is_subclass_of( $a_iname, 'DOMElementParser' ) )
+        if( empty( $a_callback ) )
             return;
 
         $name_arr = explode(' ', $a_name);
         foreach( $name_arr as $i)
         {
             $key = strtolower( trim($i) );
-            $this->m_parsers[ $key ] = $a_iname;
-
-            //echo 'Register "' . $key . '" transformer<br />';
-        }
-
-        return true;
-    }
-
-    public function registerParserInstance( $a_name, DOMElementParser & $a_istance )
-    {
-        if( empty( $a_name ) )
-            return;
-           
-        if( !$a_istance )
-            return;
-
-        $name_arr = explode(' ', $a_name);
-        foreach( $name_arr as $i)
-        {
-            $key = strtolower( trim($i) );
-            $this->m_parsers[ $key ] = $a_istance;
-            //echo 'Register "' . $key . '" parser<br />';
+            $this->m_parsers[ $key ] = $a_callback;
         }
         return true;
     }
@@ -191,50 +140,23 @@ class DOMParser
     {
         foreach( $a_arr as $k => $v )
         {
-            if( $v instanceof DOMElementParser )
-                $this->registerParserInstance( $k , $v );
-            else
-                $this->registerParser( $k , $v );
+	    $this->registerParser( $k , $v );
         }
     }
 
-    public function registerDataType( $a_name, $a_iname )
+    public function registerDataType( $a_name, $a_callback )
     {
-        if( empty( $a_name ) )
+	if( empty( $a_name ) || !is_string( $a_name ) )
             return;
 
-        if( empty( $a_iname ) )
-            return;
-
-        if( !in_array( $a_iname, get_declared_classes() ) )
-            return;
-
-        if( !is_subclass_of( $a_iname, 'DOMElementDataParser' ) )
+        if( empty( $a_callback ) )
             return;
 
         $name_arr = explode(' ', $a_name);
         foreach( $name_arr as $i)
         {
             $key = strtolower( trim($i) );
-            $this->m_dataParsers[ $key ] = $a_iname;
-
-            //echo 'Register dataType "' . $key . '"<br />';
-        }
-
-        return true;
-    }
-
-    public function registerDataTypeInstance( $a_name, DOMElementDataParser & $a_istance )
-    {
-        if( empty( $a_name ) )
-            return;
-
-        $name_arr = explode(' ', $a_name);
-        foreach( $name_arr as $i)
-        {
-            $key = strtolower( trim($i) );
-            $this->m_dataParsers[ $key ] = $a_istance;
-            //echo 'Register dataType "' . $key . '"<br />';
+            $this->m_dataParsers[ $key ] = $a_callback;
         }
         return true;
     }
@@ -243,40 +165,24 @@ class DOMParser
     {
         foreach( $a_arr as $k => $v )
         {
-            if( $v instanceof DOMElementDataParser )
-                $this->registerDataTypeInstance( $k , $v );
-            else
-                $this->registerDataType( $k , $v );
+	    $this->registerDataType( $k , $v );
         }
     }
 
     public function parseDataType( DOMElement & $a_node )
     {
-        $dataType = $a_node->getAttribute('dataType');
+        $dataType = strtolower( $a_node->getAttribute('dataType') );
 
         if( key_exists($dataType, $this->m_dataParsers) )
         {
-            $parser =& $this->m_dataParsers[ $dataType ];
-            if( $parser instanceof DOMElementDataParser )
-            {
-                return $parser->doParse($this, $a_node);
-            }
-
-            $c = new $parser($this, $a_node);
-            return $parser->doParse($this, $a_node);
-            
+	    $this->_parseElement( $a_node, $this->m_dataParsers[ $dataType ] );
+            return;
         }
 
         if( isset( $this->m_dataParsers[ 'default_parser' ] ) )
         {
-            $parser =& $this->m_dataParsers[ 'default_parser' ];
-            if( $parser instanceof DOMElementDataParser )
-            {
-                return $parser->doParse($this, $a_node);
-            }
-
-            $c = new $parser();
-            return $parser->doParse($this, $a_node);
+	    $this->_parseElement( $a_node, $this->m_dataParsers[ 'default_parser' ] );
+            return;
         }
     }
     
@@ -291,34 +197,43 @@ class DOMParser
         }
     }
 
+    private function _parseElement( DOMElement & $a_node, & $a_callback )
+    {
+	switch( gettype($a_callback) )
+	{
+	    case 'string':
+		call_user_func_array($a_callback, array( $this, $a_node ) );
+		break;
+
+	    case 'array':
+
+		if( $a_callback[0] instanceof DOMElementParser )
+		{
+		    $instance =& $a_callback[0];
+
+		    $instance->setNode($a_node);
+		    $instance->setParser($this);
+
+		    break;
+		}
+
+		call_user_func_array($a_callback, array( $this, $a_node ) );
+		break;
+	}
+    }
+
     public function parseElement( DOMElement & $a_node )
     {
         $nodename = strtolower( $a_node->nodeName );
-        if( isset( $this->m_parsers[ $nodename ] ) )
+        if( array_key_exists($nodename, $this->m_parsers) )
         {
-            $parser =& $this->m_parsers[ $nodename ];
-            if( $parser instanceof DOMElementParser )
-            {
-                $parser->doParse($this, $a_node);
-                return;
-            }
-            
-            $c = new $parser();
-            $parser->doParse($this, $a_node);
+	    $this->_parseElement( $a_node, $this->m_parsers[ $nodename ] );
             return;
         }
 
-        if( isset( $this->m_parsers[ 'default_parser' ] ) )
+        if( array_key_exists('default_parser', $this->m_parsers) )
         {
-            $parser =& $this->m_parsers[ 'default_parser' ];
-            if( $parser instanceof DOMElementParser )
-            {
-                $parser->doParse($this, $a_node);
-                return;
-            }
-
-            $c = new $parser();
-            $parser->doParse($this, $a_node);
+            $this->_parseElement( $a_node, $this->m_parsers[ 'default_parser' ] );
             return;
         }
     }
