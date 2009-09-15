@@ -186,6 +186,8 @@ class DOMSite extends DOMParser
         'generator'	=> 'XML Page Controller'
     );
 
+    private $m_rprovider = null;
+
     private $m_log = array();
 
     private $m_pages = array();
@@ -219,11 +221,15 @@ class DOMSite extends DOMParser
             'meta' => new tagMetaParser()
         ));
 
+        $this->m_rprovider = new RoleProvider();
+
         $this->m_options = array_merge($this->m_options, $options );//print_r( $this->m_options );
         if ($this->m_options['output'] == true )
         {
             echo $this->out();
         }
+
+
     }
 
     public function addOption( $key, $value )
@@ -253,7 +259,10 @@ class DOMSite extends DOMParser
 
         if( !$node )
             return;
-        $p              = new PageElement();
+
+        $this->m_pages[$path] = new PageElement();
+        
+        $p              =& $this->m_pages[$path];
         $p->id          = $node->getAttribute('id');
         $p->path        = $path;
         $p->lang        = $this->m_options['lang'];
@@ -265,8 +274,12 @@ class DOMSite extends DOMParser
         $p->fullpath    = $this->m_options['base'] . $p->file;
         $p->alias       = $node->getAttribute('alias');
 
-        $this->m_pages[$path] = $p;
-
+        $custom_path    = $node->getAttribute('path');
+        if( !empty($custom_path) )
+        {
+            $p->fullpath = $custom_path;
+        }
+        
         $this->log('Register Page "'. $p->path . '"');
     }
 
@@ -363,11 +376,11 @@ class DOMSite extends DOMParser
             array_push($this->m_styles['inline'], "\n/***** inline style *****/\n" . $s );
         }
         
-        if( count($page->locale) )
+/*        if( count($page->locale) )
         {
             $this->m_locales = array_merge( $this->m_locales, $page->locale );
         }
-
+*/
         if( $this->m_options['log_page'] )
         {
             $this->m_log = array_merge( $this->m_log, $page->_log );
@@ -445,6 +458,40 @@ class DOMSite extends DOMParser
         }
         $this->log('Parse index: "'.$this->m_options['index'].'"' );
 
+        /*
+         * Role class
+         */
+        if( isset($this->m_options['roleclass']) )
+        {
+            $rclass =& $this->m_options['roleclass'];
+            $this->log('Role class name: "'.$this->m_options['roleclass'].'"' );
+            if( class_exists($rclass) )
+            {
+                $true = false;
+                foreach ( class_parents($rclass) as $class )
+                {
+                    if( $class == 'Role' )
+                    {
+                        $true = true;
+                        break;
+                    }
+                }
+
+                if ($true)
+                {
+                    $rc = new $rclass();
+                    $this->m_rprovider->registerRole($rc);
+                    $this->m_rprovider->doLogin();
+                }
+                $this->log('Role class not inherits from Role');
+                
+            }else $this->log('Role class not defined');
+        }
+        else
+        {
+            $this->log('Role class not found');
+        }
+
         /**
          * Select page
          */
@@ -489,16 +536,37 @@ class DOMSite extends DOMParser
                 }
             }
 
-            if( $page->role != null )
+            if( !empty($page->role) )
             {
-                unset( $page );
-                $page = $this->_selectPageById( $this->m_options['id_page_no_access'] );
-                
-                if( !$page )
+                $role =& $this->m_rprovider;
+
+
+                if( $role->isLogged() )
                 {
-                    $this->log('Page "' . $this->m_options['id_page_no_access'] . '" not found.',  2);
-                    if( $log_out ) echo $this->log_print();
-                    return;
+                    echo 'Is logedin';
+                    if( $role->hasAccess( $page->role ) )
+                    {
+
+                    }
+                    else
+                    {
+                        unset( $page );
+                        $page = $this->_selectPageById( $this->m_options['id_page_no_access'] );
+                    }
+                }
+                else
+                {
+                    $this->m_rprovider->doLogin();
+                    if( $role->isLogged() )
+                    {
+                        echo 'Is success';
+                    }
+                    else
+                        echo 'Is failes';
+
+                    unset( $page );
+                    $page = $this->_selectPageById( $this->m_options['id_page_login'] );
+                    
                 }
             }
         }
@@ -653,9 +721,8 @@ class DOMSite extends DOMParser
             $links_arr[ $k ] = 'http://' . $_SERVER['HTTP_HOST'] . $sname . $k;
         }
 
-       // print_r( $this->m_locales );
-        $doc = Template::apply( $doc, $links_arr, array('${link:',"}") );
-        $doc = Template::apply( $doc, $this->m_locales, array('${l:',"}") );
+        $doc = Template::_doAssign( $doc, $links_arr, array('${link:',"}"), false );
+        $doc = Template::_doAssign( $doc, $this->m_locales, array('${l:',"}"), false );
 
         return $doctype . $doc;
     }
