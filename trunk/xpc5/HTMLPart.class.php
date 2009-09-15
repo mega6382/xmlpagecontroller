@@ -19,9 +19,9 @@ defined( 'XPC_CLASSES' ) or die('defined');
  *
  * @author Andrew Saponenko (roguevoo@gmail.com)
  */
-class eParser_htmlpart_style extends DOMElementParser
+class HTMLPartParser extends DOMElementParser
 {
-    protected function parse()
+    public function style()
     {
         switch( parent::attr('type') )
         {
@@ -40,11 +40,8 @@ class eParser_htmlpart_style extends DOMElementParser
             break;
         }
     }
-}
 
-class eParser_htmlpart_script extends DOMElementParser
-{
-    protected function parse()
+    public function script()
     {
         switch( parent::attr('type') )
         {
@@ -96,9 +93,12 @@ class HTMLPart extends DOMPart
     public function __construct()
     {
         parent::__construct();
+
+        $p = new HTMLPartParser();
+
         parent::registerParsers( array(
-            'css style stylesheet' => new eParser_htmlpart_style(),
-            'js script jscript jsscript javascript' => new eParser_htmlpart_script()
+            'css style stylesheet' => array( $p, 'style' ),
+            'js script jscript jsscript javascript' => array( $p, 'script' )
         ));
 
         $this->m_script_inline  = array();
