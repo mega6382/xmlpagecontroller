@@ -28,6 +28,12 @@ class DOMNodeProcessor
     protected final function & parser()
     { return $this->m_owner; }
 
+    protected final function & getNode()
+    { return $this->m_node; }
+
+    protected final function & getParser()
+    { return $this->m_owner; }
+
     public final function setNode( DOMElement & $a_node )
     { unset( $this->m_node ); $this->m_node = $a_node; }
 
@@ -38,7 +44,7 @@ class DOMNodeProcessor
     {
         $childs = array();
 
-        foreach ( parent::node()->childNodes as $c )
+        foreach ( $this->m_node->childNodes as $c )
         {
             if( $c->nodeType != XML_ELEMENT_NODE ) continue;
             $childs[] = $c;
@@ -47,60 +53,50 @@ class DOMNodeProcessor
     }
 
     protected final function text()
-    { return parent::node()->textContent; }
+    { return $this->m_node->textContent; }
 
     protected final function data()
-    { return parent::node()->textContent; }
+    { return $this->m_node->textContent; }
 
     protected final function name()
-    { return parent::node()->nodeName; }
+    { return $this->m_node->nodeName; }
 
     protected final function attr( $a_name )
-    { return parent::node()->hasAttribute( $a_name ) ? parent::node()->getAttribute( $a_name ) : null; }
+    { return $this->m_node->hasAttribute( $a_name ) ? $this->m_node->getAttribute( $a_name ) : null; }
 
     protected final function attrs()
     {
         $result = array();
 
-        $attr_array = parent::node()->attributes;
+        $attr_array = $this->m_node->attributes;
         $attr_counter = 0;
-        while( 1 )
-        {
-            $a = $attr_array->item($attr_counter);
-            if( !$a )
-                break;
-
+        while( ( $a = $attr_array->item($attr_counter++) ) !== null )
             $result[ $a->name ] = $a->value;
-
-            $attr_counter++;
-        }
+            
         return $result;
     }
 }
 
 abstract class DOMElementParser extends DOMNodeProcessor
 {
-    protected function value()
-    { return parent::parser()->parseDataType( parent::node() ); }
+    protected final function value()
+    {
+        return parent::parser()->parseDataType( parent::node() );
+    }
 
     public final function doInside()
     {
-        $t_node     = $this->node();
-        $t_parser   = $this->parser();
+        $node     = parent::node();
+        $parser   = parent::parser();
 
-        foreach( $this->child() as $c )
+        foreach( parent::child() as $c )
         {
-            $t_parser->parseElement( $c );
+            $parser->parseElement( $c );
         }
 
-        $this->setNode($t_node);
-        $this->setParser($t_parser);
+        $this->setNode($node);
+        $this->setParser($parser);
     }
-}
-
-abstract class DOMElementDataParser extends DOMNodeProcessor
-{
-
 }
 
 /**
@@ -115,8 +111,8 @@ class DOMParser
 
     public function __construct()
     {
-        $this->m_parsers = array();
-        $this->m_dataParsers = array();
+        $this->m_parsers        = array();
+        $this->m_dataParsers    = array();
     }
 
     public function registerParser( $a_name, $a_callback )
@@ -140,7 +136,7 @@ class DOMParser
     {
         foreach( $a_arr as $k => $v )
         {
-	    $this->registerParser( $k , $v );
+            $this->registerParser( $k , $v );
         }
     }
 
@@ -165,7 +161,7 @@ class DOMParser
     {
         foreach( $a_arr as $k => $v )
         {
-	    $this->registerDataType( $k , $v );
+            $this->registerDataType( $k , $v );
         }
     }
 
@@ -173,16 +169,14 @@ class DOMParser
     {
         $dataType = strtolower( $a_node->getAttribute('dataType') );
 
-        if( key_exists($dataType, $this->m_dataParsers) )
+        if( array_key_exists($dataType, $this->m_dataParsers) )
         {
-	    $this->_parseElement( $a_node, $this->m_dataParsers[ $dataType ] );
-            return;
+            return $this->_parseElement( $a_node, $this->m_dataParsers[ $dataType ] );
         }
 
         if( isset( $this->m_dataParsers[ 'default_parser' ] ) )
         {
-	    $this->_parseElement( $a_node, $this->m_dataParsers[ 'default_parser' ] );
-            return;
+            return $this->_parseElement( $a_node, $this->m_dataParsers[ 'default_parser' ] );
         }
     }
     
@@ -199,27 +193,27 @@ class DOMParser
 
     private function _parseElement( DOMElement & $a_node, & $a_callback )
     {
-	switch( gettype($a_callback) )
-	{
-	    case 'string':
-		call_user_func_array($a_callback, array( $this, $a_node ) );
-		break;
+        
+        switch( gettype($a_callback) )
+        {
+            case 'string':
+                
+                return call_user_func_array( $a_callback, array( $this, $a_node ) );
+                
 
-	    case 'array':
+            case 'array':
 
-		if( $a_callback[0] instanceof DOMElementParser )
-		{
-		    $instance =& $a_callback[0];
+                if( $a_callback[0] instanceof DOMElementParser )
+                {
+                    $instance =& $a_callback[0];
+                    $instance->setNode($a_node);
+                    $instance->setParser($this);
 
-		    $instance->setNode($a_node);
-		    $instance->setParser($this);
+                    return call_user_func_array( $a_callback, array() );
+                }
 
-		    break;
-		}
-
-		call_user_func_array($a_callback, array( $this, $a_node ) );
-		break;
-	}
+                return call_user_func_array( $a_callback, array( $this, $a_node ) );
+        }
     }
 
     public function parseElement( DOMElement & $a_node )
@@ -227,14 +221,12 @@ class DOMParser
         $nodename = strtolower( $a_node->nodeName );
         if( array_key_exists($nodename, $this->m_parsers) )
         {
-	    $this->_parseElement( $a_node, $this->m_parsers[ $nodename ] );
-            return;
+            return $this->_parseElement( $a_node, $this->m_parsers[ $nodename ] );
         }
 
         if( array_key_exists('default_parser', $this->m_parsers) )
         {
-            $this->_parseElement( $a_node, $this->m_parsers[ 'default_parser' ] );
-            return;
+            return $this->_parseElement( $a_node, $this->m_parsers[ 'default_parser' ] );
         }
     }
 
@@ -268,10 +260,12 @@ class DOMParser
         switch( $a_dom->nodeType )
         {
             default:
-                return false;
+                return;
+
             case XML_DOCUMENT_NODE:
                 $this->parseDocument($a_dom);
                 break;
+
             case XML_ELEMENT_NODE:
                 $this->parseElement($a_dom);
                 break;
