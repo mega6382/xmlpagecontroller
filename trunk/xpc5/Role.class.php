@@ -19,40 +19,76 @@ defined( 'XPC_CLASSES' ) or die('defined');
  *
  * @author Andrew Saponenko (roguevoo@gmail.com)
  */
-class Role
+abstract class Role
 {
-    public $id;
-    public $access;
+    protected $sm_uin   = "session_register_uin";
+    protected $sm_group = "session_register_group";
 
-    static public $sm_reg_name = "session_register";
-
-    public function __construct()
-    {
-
-    }
+    public function __construct(){}
 
     public function role()
     {
+        return array( $this->group(), $this->uin() );
+    }
+    public function group()
+    {
+        return isset( $_SESSION[ $this->sm_group] )    ? $_SESSION[ $this->sm_group ] : null;
+    }
+
+    public function uin()
+    {
+        return isset( $_SESSION[ $this->sm_uin ] )      ? $_SESSION[ $this->sm_uin ] : null;
+    }
+
+    abstract public function login();
+}
+
+class RoleProvider
+{
+    private $m_role;
+
+    public function __construct()
+    {
+        $this->m_role = null;
+    }
+
+    public function registerRole( Role & $a_role )
+    {
+        $this->m_role = $a_role;
+        return true;
+    }
+
+    public function isLogged()
+    {
+        if( $this->m_role == null )
+            return;
+            
+        if( $this->m_role->group() ==  null )
+            return;
+
+        if( $this->m_role->uin() == null )
+            return;
+
+        return true;
+    }
+
+    public function doLogin()
+    {
+        $this->m_role->login();
+    }
+
+    private function _roleCompare( $a_role )
+    {
 
     }
 
-    static public function register()
+    public function hasAccess( $a_to )
     {
-        $_SESSION['auth'] = true;
-    }
-
-    static public function unregiter()
-    {
-        if( key_exists( self::$sm_reg_name, $_SESSION) )
-            unset( $_SESSION[self::$sm_reg_name] );
-    }
-
-    static public function isLogged()
-    {
-        if( !$_SESSION || !is_array($_SESSION) )
+        if( preg_match('/g:\w+/gim', $a_to) == false )
             return false;
 
-        return isset( $_SESSION[self::$sm_reg_name] );
+        $res = preg_replace('(g:\w+)','${1}',$a_to);
+        print_r( $res );
     }
 }
 ?>
