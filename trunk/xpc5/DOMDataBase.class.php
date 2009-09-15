@@ -22,11 +22,11 @@ defined( 'XPC_CLASSES' ) or die('defined');
 
  defined( 'XPC_CLASSES' ) or die();
 
-class DOMDataDraft_tagRoot extends DOMElementParser
+class pParser_database_root extends DOMElementParser
 {
     public function parse()
     {
-        return true;
+        parent::doInside();
     }
 }
 
@@ -42,12 +42,11 @@ class DOMDataDraft_tagEcho extends DOMElementParser
 
 class DOMDataBase extends DOMParser
 {
-    protected $m_data;
     public function __construct()
     {
         $walkers = array(
-            'echo hello worl' => new DOMDataDraft_tagEcho($this),
-            'root' => 'DOMDataDraft_tagRoot'
+            'echo' => new DOMDataDraft_tagEcho($this),
+            'root' => new pParser_database_root
         );
 
         $this->registerWalkers($walkers);
