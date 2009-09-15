@@ -17,82 +17,37 @@ defined( 'XPC_CLASSES' ) or die('defined');
 /**
  *
  */
-class eParser_part_recursive extends DOMElementParser
+class DOMPartParser extends DOMElementParser
 {
-    protected function parse()
+    public function recursive()
     {
         parent::doInside();
     }
-}
 
-/**
- *
- */
-class eParser_part_container extends DOMElementParser
-{
-    protected function parse()
+    public function container()
     {
-        parent::parser()->setContainer( parent::value());
+        parent::parser()->setContainer( parent::value() );
     }
-}
 
-/**
- *
- */
-class eParser_part_option extends DOMElementParser
-{
-    protected function parse()
+    public function option()
     {
         parent::parser()->setOption( parent::attr('name'), parent::value() );
     }
-}
 
-/**
- *
- */
-class eParser_part_var extends DOMElementParser
-{
-    protected function parse()
+    public function variable()
     {
         parent::parser()->setVar( parent::attr('name'), parent::value() );
     }
-}
 
-class eParser_part_template extends DOMElementParser
-{
-    protected function parse()
+    public function template()
     {
         parent::parser()->setTemplate( parent::attr('name'), parent::value() );
     }
-}
 
-class eParser_part_templates extends DOMElementParser
-{
-    protected function parse()
-    {
-        foreach( $this->child() as $c )
-        {
-            if( $c->hasAttribute('name') )
-            {
-                parent::parser()->setOption($c->getAttribute('name'),$c->textContent);
-                return;
-            }
-
-            if( $c->hasAttribute('name') )
-            {
-                parent::parser()->setOption($c->getAttribute('name'),$c->textContent);
-                return;
-            }
-        }
-    }
-}
-
-/**
- * Parser for echo, out, value tags see XPC spec
- */
-class eParser_part_echo extends DOMElementParser
-{
-    protected function parse()
+    /**
+     * Parser for echo, out, value tags see XPC spec
+     */
+    public function echo_()
     {
         $templateName = $this->attr('template');
         if( $templateName )
@@ -104,6 +59,7 @@ class eParser_part_echo extends DOMElementParser
 
             parent::parser()->push();
             parent::doInside();
+
             list($container,$echos) = parent::parser()->pop();
             $res = Template::_doAssign($template, $echos, array('${','}'), false );
             parent::parser()->addEcho( parent::attr('name'), $res );
@@ -113,11 +69,8 @@ class eParser_part_echo extends DOMElementParser
             parent::parser()->addEcho( parent::attr('name'), parent::value() );
         }
     }
-}
 
-class eParser_part_if extends DOMElementParser
-{
-    protected function parse()
+    public function if_()
     {
         $if_array = array();
 
@@ -169,7 +122,6 @@ class eParser_part_if extends DOMElementParser
 
         foreach( parent::attrs() as $key => $value )
         {
-            //echo 'Attr key '.$key.': '.$value . '<br />';
             switch( $key )
             {
                 case 'has':
@@ -191,7 +143,7 @@ class eParser_part_if extends DOMElementParser
                 case 'condition':
                 case 'param':
                     list( $var1, $cond, $var2 ) = explode(' ', $value);
-                    //echo 'Param: ' . $var1 . ' ' . $cond . ' ' . $var2;
+
                     $if_val =& $if_array[$var1];
                     $if_res = false;
 
@@ -230,11 +182,8 @@ class eParser_part_if extends DOMElementParser
             }
         }
     }
-}
 
-class eParser_part_switch extends DOMElementParser
-{
-    protected function parse()
+    public function switch_()
     {
         $array = array();
 
@@ -376,38 +325,15 @@ class eParser_part_switch extends DOMElementParser
             return;
         }
     }
-}
 
-/**
- * Parser for echo, out, value tags see XPC spec
- */
-class eParser_part_default extends DOMElementParser
-{
-    protected function parse()
+    public function typeDefaultParser()
     {
-        switch( parent::name() )
-        {
-            default:
-           //     echo 'Default parse: ' . parent::name() . '<br />';
-                break;
-        }
-        
+        return parent::text();
     }
-}
 
-class dParser_part_default extends DOMElementDataParser
-{
-    protected function parse()
+    public function typeFile()
     {
-        return parent::node()->textContent;
-    }
-}
-
-class dParser_part_file extends DOMElementDataParser
-{
-    protected function parse()
-    {
-        $filename = parent::node()->textContent;
+        $filename = parent::text();
         if( empty($filename) )
             return;
 
@@ -416,13 +342,10 @@ class dParser_part_file extends DOMElementDataParser
 
         return file_get_contents($filename);
     }
-}
 
-class dParser_part_php extends DOMElementDataParser
-{
-    protected function parse()
+    public function typePHP()
     {
-        $filename = parent::node()->textContent;
+        $filename = parent::text();
         if( empty($filename) )
             return;
 
@@ -433,19 +356,16 @@ class dParser_part_php extends DOMElementDataParser
         $return = include($filename);
         $content = ob_get_contents();
         ob_end_clean();
-        
+
         if( $return != 1 )
             $content = $return . $content;
 
         return $content;
     }
-}
 
-class dParser_part_xml extends DOMElementDataParser
-{
-    protected function parse()
+    public function typeXML()
     {
-        $filename = parent::node()->textContent;
+        $filename = parent::text();
         if( empty($filename) )
             return;
 
@@ -613,28 +533,29 @@ class DOMPart extends DOMParser
     }
 
     /**
-     * Construct class and registet default parsers
+     * Construct class and register default parsers
      */
     public function __construct()
     {
         parent::__construct();
+
+        $p = new DOMPartParser;
         parent::registerParsers( array(
-            'default_parser'    => new eParser_part_default(),
-            'root pages'        => new eParser_part_recursive(),
-            'option'            => new eParser_part_option(),
-            'var variable'      => new eParser_part_var(),
-            'template'          => new eParser_part_template(),
-            'out echo value'    => new eParser_part_echo(),
-            'container'         => new eParser_part_container(),
-            'if if-get if-post if-cookie if-cookies if-request if-session if-global if-globals if-file if-files if-server if-env if-var if-vars if-option if-options' => new eParser_part_if(),
-            'switch switch-get switch-post switch-cookie switch-cookies switch-request switch-session switch-global switch-globals switch-file switch-files switch-server switch-env switch-var switch-vars switch-option switch-options' => new eParser_part_switch()
+            'default_parser'    => array($p, 'recursive'),
+            'container'         => array($p, 'container'),
+            'option'            => array($p, 'option'),
+            'var variable'      => array($p, 'variable'),
+            'template'          => array($p, 'template'),
+            'out echo value'    => array($p, 'echo_'),
+            'if if-get if-post if-cookie if-cookies if-request if-session if-global if-globals if-file if-files if-server if-env if-var if-vars if-option if-options' => array($p,'if_'),
+            'switch switch-get switch-post switch-cookie switch-cookies switch-request switch-session switch-global switch-globals switch-file switch-files switch-server switch-env switch-var switch-vars switch-option switch-options' => array($p,'switch_')
         ));
 
         parent::registerDataTypes( array(
-            'default_parser inline'    => new dParser_part_default(),
-            'file'              => new dParser_part_file(),
-            'php'               => new dParser_part_php(),
-            'xml'               => new dParser_part_xml()
+            'default_parser inline' => array($p, 'typeDefaultParser'),
+            'file'                  => array($p, 'typeFile'),
+            'php'                   => array($p, 'typePHP'),
+            'xml'                   => array($p, 'typeXML')
         ));
 
         $this->m_options        = array(
