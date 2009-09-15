@@ -24,12 +24,6 @@
      * Include classes
      */
     require XPC_CLASS_SYSTEM_PATH . 'Template.class.php';
-    require XPC_CLASS_SYSTEM_PATH . 'XMLTag.class.php';
-    require XPC_CLASS_SYSTEM_PATH . 'XMLParser.class.php';
-    require XPC_CLASS_SYSTEM_PATH . 'XMLConfig.class.php';
-    require XPC_CLASS_SYSTEM_PATH . 'ZIPReader.class.php';
-    require XPC_CLASS_SYSTEM_PATH . 'XMLPage.class.php';
-    require XPC_CLASS_SYSTEM_PATH . 'XMLSite.class.php';
     require XPC_CLASS_SYSTEM_PATH . 'DOMSimpler.php';
     require XPC_CLASS_SYSTEM_PATH . 'DOMMutator.class.php';
     require XPC_CLASS_SYSTEM_PATH . 'DOMParser.class.php';
@@ -38,9 +32,8 @@
     require XPC_CLASS_SYSTEM_PATH . 'DOMPart.class.php';
     require XPC_CLASS_SYSTEM_PATH . 'HTMLPart.class.php';
     require XPC_CLASS_SYSTEM_PATH . 'DOMRole.class.php';
-    require XPC_CLASS_SYSTEM_PATH . 'Role.class.php';
     require XPC_CLASS_SYSTEM_PATH . 'DOMSite.class.php';
-    require XPC_CLASS_SYSTEM_PATH . 'Document.class.php';
-    require XPC_CLASS_SYSTEM_PATH . 'Application.class.php';
+    require XPC_CLASS_SYSTEM_PATH . 'Role.class.php';
+    
 
 ?>
