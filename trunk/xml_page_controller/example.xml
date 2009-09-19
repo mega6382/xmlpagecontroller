@@ -1,15 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+    This file is part of XML Page Controller.
+
+    XML Page Controller is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    XML Page Controller is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with XML Page Controller.  If not, see <http://www.gnu.org/licenses/>.
+-->
 <root>
 	<options>
 		<!-- define options -->
 		<option name="default_locale">en</option>
-		<option name="image_dir"></option>
-		<option name="script_dir"></option>
-		<option name="style_dir"></option>
-		<option name="layout_dir"></option>
-		<option name="module_dir"></option>
-		<option name="template_dir"></option>
-		<!-- define end -->
 	</options>
 	<container type="inline">
 	<![CDATA[
@@ -23,10 +32,8 @@
 				<meta name="revised"			content="[PAGE_HEADER_AUTHOR], [PAGE_HEADER_REVISION]" />
 				<meta name="author"				content="[PAGE_HEADER_AUTHOR]" />
 				<title>[PAGE_HEADER_TITLE]</title>
-				[PAGE:INCLUDE_STYLE]
 			</head>
 			<body>[CONTENT]</body>
-			<body>[PAGE:INLINE_STYLE][CONTENT][PAGE:INCLUDE_SCRIPT][PAGE:INLINE_SCRIPT]</body>
 		</html>
 	]]>
 	</container>
@@ -38,6 +45,7 @@
 	<pages>
 		<out name="header_title">Hello World title</out>
 		<out name="content">Hello World!!!</out>
+
 		<!-- INCLUDE JAVASCRIPT FILE -->
 		<script type="file">script.js</script>
 		
