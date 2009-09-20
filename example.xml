@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    This file is part of XML Page Controller.
+
+    XML Page Controller is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    XML Page Controller is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with XML Page Controller.  If not, see <http://www.gnu.org/licenses/>.
+-->
+<root>
+	<options>
+		<!-- define options -->
+		<option name="default_locale">en</option>
+	</options>
+	<container type="inline">
+	<![CDATA[
+		<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+		<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="[LANG]" lang="[LANG]">
+			<head>
+				<title>[HEADER_TITLE]</title>
+				<meta http-equiv="Content-Type"	content="text/html; charset=[PAGE_HEADER_ENCODING]" />
+				<meta name="keywords"			content="[PAGE_HEADER_KEYWORDS]" />
+				<meta name="description"		content="[PAGE_HEADER_DESCRIPTION]" />
+				<meta name="revised"			content="[PAGE_HEADER_AUTHOR], [PAGE_HEADER_REVISION]" />
+				<meta name="author"				content="[PAGE_HEADER_AUTHOR]" />
+				<title>[PAGE_HEADER_TITLE]</title>
+			</head>
+			<body>[CONTENT]</body>
+		</html>
+	]]>
+	</container>
+	<templates>
+		<template name="test1" type="inline"><![CDATA[<h2>[TEXT]</h2><br />]]></template>
+		<template name="test2" type="inline"><![CDATA[<h3>[TEXT]</h3><br />]]></template>
+		<template name="link" type="inline"><![CDATA[<a href="[URL]">[TEXT]</a><br />]]></template>
+	</templates>
+	<pages>
+		<out name="header_title">Hello World title</out>
+		<out name="content">Hello World!!!</out>
+
+		<!-- INCLUDE JAVASCRIPT FILE -->
+		<script type="file">script.js</script>
+		
+		<!-- INJECT INLINE JAVASCRIPT -->
+		<script type="inline">
+		<![CDATA[
+			var a = 10;
+			var b = 5;
+			var c = a + b;
+		]]>
+		</script>
+		
+		<!-- INCLUDE CSS FILE -->
+		<style type="file">style.css</style>
+		
+		<!-- INJECT INLINE CSS -->
+		<style type="inline">
+		<![CDATA[
+			body{
+				background-color: #333333;
+				color: #cccccc;
+				margin: 0px;
+				padding: 0px;
+				
+				font-family:Arial, Helvetica, sans-serif;
+				font-size: 13px;
+			}
+		]]>
+		</style>
+		
+		<!-- FILL TEMPLATE VALUES -->
+		<out name="page_header_title">Example page</out>
+		<out name="page_header_encoding">utf-8</out>
+		<out name="page_header_keywords">Keywords,keywords,keywords,keywords</out>
+		<out name="page_header_description">Site description</out>
+		<out name="page_header_author">Author name</out>
+		<out name="page_header_revision">01.01.2008</out>
+		
+		<!-- SIMPLE INLINE OUT -->
+		<out name="content" type="inline"><![CDATA[<h1>Example page</h1>]]></out>	
+		
+		<!-- OUT BY TEMPLATE -->
+		<out name="content" template="test1">
+			<out name="text" type="inline">Template test 1</out>
+		</out>
+		
+		<!-- OUT BY TEMPLATE -->
+		<out name="content" template="test2">
+			<out name="text" type="inline">Template test 2</out>
+		</out>
+		
+		<!-- OUT BY TEMPLATE -->
+		<out name="content" template="link">
+			<out name="text" type="inline">RUS link</out>
+			<out name="url" type="inline"><![CDATA[?lang=ru]]></out>
+		</out>
+		
+		<!-- OUT BY TEMPLATE -->
+		<out name="content" template="link">
+			<out name="text" type="inline">ENG link</out>
+			<out name="url" type="inline"><![CDATA[?lang=en]]></out>
+		</out>
+		
+		<!-- MULTILANGUE OUT -->
+		<out name="content" type="inline">[MULTILANGUE_OUT]</out>
+	</pages>
+	<locale lang="ru">
+		<item name="multilangue_out">Русский текст</item>
+	</locale>
+	<locale lang="en">
+		<item name="multilangue_out">English text</item>
+	</locale>
+</root>
